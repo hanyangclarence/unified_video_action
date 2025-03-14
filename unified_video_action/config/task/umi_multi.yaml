@@ -4,7 +4,8 @@ defaults:
 
 name: umi
 task_type: multiple_datasets
-task_modes: ["policy_model", "full_dynamic_model"]
+# task_modes: ["policy_model", "full_dynamic_model"]
+task_modes: []
 
 dataset:
   _target_: unified_video_action.dataset.umi_multi_dataset.UmiMultiDataset

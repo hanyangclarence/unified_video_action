@@ -3,7 +3,6 @@
 #SBATCH -p preempt
 #SBATCH --nodes=4
 #SBATCH --ntasks-per-node=1
-#SBATCH -A marlowe-m000073
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=112
 #SBATCH --mem=1800G
