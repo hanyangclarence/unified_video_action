@@ -60,6 +60,8 @@ We found that two-stage training works better than training on both video and ac
 
 To train the UVA model for the video generation task, we set `predict_action=False` and `selected_training_mode=video_model`. We did not incorporate additional video data during training. We believe that pretraining the model on large-scale web video datasets could substantially improve its generalization capabilities, and we plan to explore this approach in future work.
 
+UVA's performance may currently be constrained by the model size. To evaluate it on larger or more complex real-world tasks, please consider using a larger UVA model.
+
 Training video and action model takes longer time than training policy model only. We recommend using at least 4 GPUs for training.
 To train the UVA model on the PushT dataset, run the following command:
 
