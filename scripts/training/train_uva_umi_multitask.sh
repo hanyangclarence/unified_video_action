@@ -29,4 +29,4 @@ accelerate launch --num_processes=8 train.py \
 #     task.dataset.dataset_root_dir=${dataset_path} \
 #     task.dataset.used_episode_indices_file=prepared_data/sampled_500_index_3_datasets.json \
 #     logging.project=uva \
-#     hydra.run.dir="uva_umi_multitask_video_action"
+#     hydra.run.dir="checkpoints/uva_umi_multitask_video_action"
