@@ -149,8 +149,6 @@ class LiberoReplayImageDataset(BaseImageDataset):
 
         self.language_emb_model = language_emb_model
 
-        self.__getitem__(0)
-
     def get_validation_dataset(self):
         val_set = copy.copy(self)
         val_set.sampler = SequenceSampler(
