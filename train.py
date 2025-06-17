@@ -21,7 +21,10 @@ import wandb
 
 if "WANDB_API_KEY" in os.environ:
     wandb.login(key=os.environ["WANDB_API_KEY"])
-
+    
+if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
+    import pdb
+    pdb.set_trace()
 
 @hydra.main(
     version_base=None,
