@@ -18,7 +18,7 @@ combinations = [tem for tem in combinations if tem[-1] == 15]
 
 def resize_image(cfg, x):
     resize = 256
-    if "libero" in cfg.task.name:
+    if "libero" in cfg.task.name or "rlbench" in cfg.task.name:
         B, T, C, H, W = x["obs"]["agentview_rgb"].shape
         resized_tensor = F.interpolate(
             x["obs"]["agentview_rgb"].float().view(B * T, C, H, W),
