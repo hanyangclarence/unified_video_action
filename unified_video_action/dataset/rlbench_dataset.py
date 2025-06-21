@@ -333,7 +333,7 @@ def _convert_robomimic_to_replay(
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
             demos_all[f"demo_{count}"] = demo
-            language_all[f"demo_{count}"] = demo["lang_goal"].decode("utf-8")
+            language_all[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
             count += 1
     print("Total demos:", count)
 
