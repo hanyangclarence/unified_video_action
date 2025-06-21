@@ -84,7 +84,7 @@ def resize_image(cfg, x):
 
 
 def resize_image_eval(task_name, obs_dict):
-    if "libero" in task_name:
+    if "libero" in task_name or "rlbench" in task_name:
         if "agentview_image" in obs_dict:
             obs_dict["image"] = obs_dict["agentview_image"]
             del obs_dict["agentview_image"]

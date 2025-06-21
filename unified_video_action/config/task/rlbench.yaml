@@ -3,7 +3,7 @@ task_type: single_dataset
 task_modes: []
 
 shape_meta: &shape_meta
-  image_resolution: 128
+  image_resolution: 256
   action:
     shape:
     - 10
@@ -11,15 +11,15 @@ shape_meta: &shape_meta
     agentview_rgb:
       shape:
       - 3
-      - 128
-      - 128
+      - 256
+      - 256
       type: rgb
     language:
       shape:
       - 15
 
 shape_meta_env: &shape_meta_env
-  image_resolution: 128
+  image_resolution: 256
   action:
     shape:
     - 10
@@ -27,8 +27,8 @@ shape_meta_env: &shape_meta_env
     agentview_image:
       shape:
       - 3
-      - 128
-      - 128
+      - 256
+      - 256
       type: rgb
       
 dataset:

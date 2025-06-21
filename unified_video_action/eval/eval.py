@@ -65,7 +65,7 @@ def prepare_data_predict_action(
     if cfg.task.dataset.language_emb_model is not None:
         if "umi" in cfg.task.name:
             text_latents = language_goal
-        elif "libero" in cfg.task.name:
+        elif "libero" in cfg.task.name or "rlbench" in cfg.task.name:
             if cfg.task.dataset.language_emb_model == "clip":
                 text_tokens = {
                     "input_ids": language_goal[:, 0].long()[:, 0],
