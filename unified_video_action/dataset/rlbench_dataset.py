@@ -263,8 +263,8 @@ def _convert_actions(raw_actions, abs_action, rotation_transformer):
             is_dual_arm = True
 
         pos = raw_actions[..., :3]
-        rot = raw_actions[..., 3:6]
-        gripper = raw_actions[..., 6:]
+        rot = raw_actions[..., 3:7]
+        gripper = raw_actions[..., 7:]
         rot = rotation_transformer.forward(rot)
         raw_actions = np.concatenate([pos, rot, gripper], axis=-1).astype(np.float32)
 
