@@ -218,8 +218,8 @@ class RLBenchDataset(BaseImageDataset):
         obs_dict = dict()
         for key in self.rgb_keys:
             obs_dict[key] = np.moveaxis(data[key], -1, 1).astype(np.float32) / 255.0
-            obs_dict[key] = np.rot90(obs_dict[key], k=2, axes=(2, 3)).copy()
-            obs_dict[key] = np.flip(obs_dict[key], axis=3).copy()
+            # obs_dict[key] = np.rot90(obs_dict[key], k=2, axes=(2, 3)).copy()
+            # obs_dict[key] = np.flip(obs_dict[key], axis=3).copy()
             del data[key]
         for key in self.lowdim_keys:
             obs_dict[key] = data[key].astype(np.float32)
