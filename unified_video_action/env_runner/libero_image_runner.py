@@ -92,7 +92,7 @@ class LiberoImageRunner(BaseImageRunner):
         past_action=False,
         abs_action=False,
         tqdm_interval_sec=5.0,
-        n_envs=None,
+        n_envs=1,  # TODO: temporarily change to 1, which then can be run on aimos
     ):
         super().__init__(output_dir)
 

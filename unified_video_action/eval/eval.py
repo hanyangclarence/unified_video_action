@@ -227,17 +227,20 @@ def test_video_fvd(
     fvd = fvd.item()
 
     os.makedirs(output_dir + "/vis", exist_ok=True)
+    grid_size = (reals.size(0) // 4, 4)
+    reals = reals[:grid_size[0] * grid_size[1]]
+    predictions = predictions[:grid_size[0] * grid_size[1]]
     real_vid = save_image_grid(
         reals.cpu().numpy(),
         os.path.join(output_dir, f"vis/{name_label}real_{it}.gif"),
         drange=[0, 255],
-        grid_size=(reals.size(0) // 4, 4),
+        grid_size=grid_size,
     )  # [4, 3, 8, 128, 128]
     pred_vid = save_image_grid(
         predictions.cpu().numpy(),
         os.path.join(output_dir, f"vis/{name_label}predicted_{it}.gif"),
         drange=[0, 255],
-        grid_size=(predictions.size(0) // 4, 4),
+        grid_size=grid_size,
     )  # [4, 3, 8, 128, 128]
 
     real_video = wandb.Video(os.path.join(output_dir, f"vis/{name_label}real_{it}.gif"))
