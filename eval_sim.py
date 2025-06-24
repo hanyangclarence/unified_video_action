@@ -16,6 +16,9 @@ from omegaconf import open_dict
 from unified_video_action.workspace.base_workspace import BaseWorkspace
 from unified_video_action.utils.load_env import load_env_runner
 
+if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
+    import pdb
+    pdb.set_trace()
 
 @click.command()
 @click.option("-c", "--checkpoint", required=True)
