@@ -9,6 +9,7 @@
 #SBATCH --gres=gpu:8
 
 cd /gpfs/u/home/LMCG/LMCGhazh/scratch/yanghan/embodied_o1/unified_video_action
+conda init
 conda activate uva
 
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
