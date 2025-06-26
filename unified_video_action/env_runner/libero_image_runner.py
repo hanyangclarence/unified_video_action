@@ -296,7 +296,8 @@ class LiberoImageRunner(BaseImageRunner):
             env.call_each("run_dill_function", args_list=[(x,) for x in this_init_fns])
 
             # start rollout
-            obs = env.reset()
+            obs = env.reset()  # dict: {"agentview_image": (B, 16, 3, 128, 128)}, 
+                               # here 16 is the initial frame repeated by 16 times
 
             # past_action = None
             past_action_list = []
@@ -343,7 +344,7 @@ class LiberoImageRunner(BaseImageRunner):
                     action_dict, lambda x: x.detach().to("cpu").numpy()
                 )
 
-                action = np_action_dict["action"]  # (1, 8, 10)
+                action = np_action_dict["action"]  # (B, 8, 10)
                 if not np.all(np.isfinite(action)):
                     print(action)
                     raise RuntimeError("Nan or Inf action")
@@ -354,6 +355,8 @@ class LiberoImageRunner(BaseImageRunner):
                     env_action = self.undo_transform_action(action)
 
                 obs, reward, done, info = env.step(env_action)
+                # obs: dict: {"agentview_image": (B, 16, 3, 128, 128)},
+                # each time, 8 frames in obs are updated
 
                 for i in range(len(reward)):
                     if reward[i] == 1:

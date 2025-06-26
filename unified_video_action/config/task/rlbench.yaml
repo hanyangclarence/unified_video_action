@@ -48,3 +48,11 @@ dataset:
   data_aug: true
   normalizer_type: all
 
+env_runner:
+  _target_: unified_video_action.env_runner.rlbench_runner.RLBenchRunner
+  abs_action: true
+  max_steps: 500
+  n_action_steps: 8
+  n_obs_steps: 16
+  past_action: false
+  tqdm_interval_sec: 1.0

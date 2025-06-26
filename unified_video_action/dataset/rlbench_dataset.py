@@ -317,10 +317,11 @@ def _convert_robomimic_to_replay(
         raise NotImplementedError(f"Language model {language_emb_model} not implemented")
 
     
-    dataset_paths = glob.glob(dataset_path + "/*.hdf5")
+    dataset_paths = glob.glob(dataset_path + "/expert_demos_*.hdf5")
+    task_demo_count = {}
+    all_demo_ids = []
 
     for dataset_path_each in dataset_paths:
-        language_goal = " ".join(dataset_path_each.split("/")[-1][:-10].split("_"))
         print(f"Loading {dataset_path_each}")
         file = h5py.File(
             dataset_path_each, "r"
@@ -332,11 +333,23 @@ def _convert_robomimic_to_replay(
 
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
+            demo_id = demo["demo_id"][()].decode("utf-8")
+            if demo_id in all_demo_ids:
+                print(f"Duplicate demo_id found: {demo_id}. Skipping.")
+                continue
+            all_demo_ids.append(demo_id)
+            
+            task_name = demo["task_name"][()].decode("utf-8")
+            if task_name not in task_demo_count:
+                task_demo_count[task_name] = 0
+            task_demo_count[task_name] += 1
+            
             demos_all[f"demo_{count}"] = demo
             language_all[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
             count += 1
     print("Total demos:", count)
-
+    for task_name, num_demos in task_demo_count.items():
+        print(f"Task: {task_name}, Number of demos: {num_demos}")
         
     seq_max_len = 30
 
