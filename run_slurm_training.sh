@@ -8,8 +8,7 @@
 #SBATCH --time=06:00:00
 #SBATCH --gres=gpu:8
 
-source ~/.bashrc
-conda init
+source /gpfs/u/home/LMCG/LMCGhazh/scratch/miniconda3x86/etc/profile.d/conda.sh
 conda activate uva
 
 cd /gpfs/u/home/LMCG/LMCGhazh/scratch/yanghan/embodied_o1/unified_video_action
