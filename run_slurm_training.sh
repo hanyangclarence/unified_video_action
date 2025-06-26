@@ -8,9 +8,11 @@
 #SBATCH --time=06:00:00
 #SBATCH --gres=gpu:8
 
-cd /gpfs/u/home/LMCG/LMCGhazh/scratch/yanghan/embodied_o1/unified_video_action
+source ~/.bashrc
 conda init
 conda activate uva
+
+cd /gpfs/u/home/LMCG/LMCGhazh/scratch/yanghan/embodied_o1/unified_video_action
 
 export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 export WANDB_API_KEY=28b3c634497c0dc6c16767729d4719b1012a94f2
