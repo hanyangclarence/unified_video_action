@@ -7,8 +7,8 @@ import pdb
 def get_text_model(task_name, language_emb_model):
     if language_emb_model == "clip":
         with torch.no_grad():
-            tokenizer = AutoTokenizer.from_pretrained("openai/clip-vit-base-patch32")
-            text_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+            tokenizer = AutoTokenizer.from_pretrained("~/scratch/cache/models--openai--clip-vit-base-patch32")
+            text_model = CLIPModel.from_pretrained("~/scratch/cache/models--openai--clip-vit-base-patch32")
     else:
         tokenizer = None
         text_model = None
