@@ -330,6 +330,18 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
                     device,
                 )
                 step_log.update(fvd_log)
+                
+                # also, eval on train set to see whether the model overfits
+                fvd_log_train = test_video_fvd(
+                    cfg,
+                    policy,
+                    train_dataloader,
+                    local_epoch_idx,
+                    self.output_dir,
+                    device,
+                    name_label="_train_",
+                )
+                step_log.update(fvd_log_train)
 
             # ========= evaluate val action error =========
             if (

@@ -23,4 +23,5 @@ LD_LIBRARY_PATH="/usr/lib/nvidia:$MUJOCO_PY_MUJOCO_PATH:$CONDA_PREFIX/lib:$LD_LI
     model.policy.selected_training_mode=video_model \
     model.policy.optimizer.learning_rate=1e-4 \
     logging.project=uva \
-    hydra.run.dir="checkpoints/uva_rlbench_video_model"
+    hydra.run.dir="checkpoints/uva_rlbench_video_model" \
+    training.resume=True
