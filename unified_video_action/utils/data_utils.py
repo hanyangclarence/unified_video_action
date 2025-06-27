@@ -444,7 +444,7 @@ def save_image_grid(img, fname, drange, grid_size, normalize=True):
     assert C in [3]
 
     if C == 3:
-        torchvision.io.write_video(f"{fname[:-3]}mp4", torch.from_numpy(img), fps=16)
+        torchvision.io.write_video(f"{fname[:-3]}mp4", torch.from_numpy(img), fps=4)
         imgs = [PIL.Image.fromarray(img[i], "RGB") for i in range(len(img))]
         imgs[0].save(
             fname,
