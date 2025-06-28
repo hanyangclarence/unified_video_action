@@ -47,4 +47,5 @@ do
 
     # Sleep for 6 hours
     sleep 6h
+    sleep 300 # Additional sleep to ensure the job has time to run
 done
