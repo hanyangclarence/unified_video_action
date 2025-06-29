@@ -39,7 +39,7 @@ policy:
     diffusion_batch_mul: 1
     grad_checkpointing: False
     #
-    num_iter: 1
+    num_iter: 8
     cfg: 1
     cfg_schedule: "linear"
     temperature: 0.95
