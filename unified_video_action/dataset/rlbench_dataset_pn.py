@@ -55,6 +55,7 @@ class RLBenchDataset(BaseImageDataset):
         language_emb_model=None,
         data_aug=False,
         normalizer_type=None,
+        language_uncond_ratio=0.1,
     ):
 
         rotation_transformer = RotationTransformer(
@@ -65,7 +66,7 @@ class RLBenchDataset(BaseImageDataset):
         if use_cache:
 
             if language_emb_model == "clip":
-                cache_zarr_path = dataset_path + "_clip.zarr.zip"
+                cache_zarr_path = dataset_path + "_clip_pn.zarr.zip"
             else:
                 raise NotImplementedError(f"Language model {language_emb_model} not implemented")
 
@@ -147,6 +148,7 @@ class RLBenchDataset(BaseImageDataset):
         self.pad_before = pad_before
         self.pad_after = pad_after
         self.use_legacy_normalizer = use_legacy_normalizer
+        self.language_uncond_ratio = language_uncond_ratio
 
         self.language_emb_model = language_emb_model
 
@@ -224,6 +226,13 @@ class RLBenchDataset(BaseImageDataset):
         for key in self.lowdim_keys:
             obs_dict[key] = data[key].astype(np.float32)
             del data[key]
+            
+            if key == "language":
+                # drop out for unconditioned language
+                if np.random.rand() < self.language_uncond_ratio:
+                    obs_dict[key] = obs_dict[key][:, :2, :]
+                else:
+                    obs_dict[key] = obs_dict[key][:, 2:, :]
 
         if self.data_aug:
             image_tensor = torch.tensor(obs_dict["agentview_rgb"], dtype=torch.float32)
@@ -308,7 +317,8 @@ def _convert_robomimic_to_replay(
 
     file_handles = []  # Store file handles if you need to keep them open
     demos_all = {}
-    language_all = {}
+    language_all_uncond = {}
+    language_all_cond = {}
     count = 0
 
     if language_emb_model == "clip":
@@ -316,7 +326,7 @@ def _convert_robomimic_to_replay(
     else:
         raise NotImplementedError(f"Language model {language_emb_model} not implemented")
 
-    
+    # load positive samples
     dataset_paths = glob.glob(dataset_path + "/expert_demos_*.hdf5")
     task_demo_count = {}
     all_demo_ids = []
@@ -345,29 +355,80 @@ def _convert_robomimic_to_replay(
             task_demo_count[task_name] += 1
             
             demos_all[f"demo_{count}"] = demo
-            language_all[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
+            language_all_uncond[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
+            language_all_cond[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|success|>"
             count += 1
-    print("Total demos:", count)
+    print("Total positive demos:", count)
+    for task_name, num_demos in task_demo_count.items():
+        print(f"Task: {task_name}, Number of demos: {num_demos}")
+    
+    # then load negative samples
+    num_positive_demos = count
+    dataset_paths = glob.glob(dataset_path + "/perturbed_demos_*.hdf5")
+    task_demo_count = {}
+    for dataset_path_each in dataset_paths:
+        print(f"Loading {dataset_path_each}")
+        file = h5py.File(
+            dataset_path_each, "r"
+        )  # Open the file without closing it immediately
+        file_handles.append(
+            file
+        )  # Keep track of the file handle to avoid it being closed
+        demos = file["data"]
+        
+        for i in range(len(demos)):
+            demo = demos[f"demo_{i}"]
+            demo_id = demo["demo_id"][()].decode("utf-8")
+            if demo_id in all_demo_ids:
+                print(f"Duplicate demo_id found: {demo_id}. Skipping.")
+                continue
+            all_demo_ids.append(demo_id)
+            
+            task_name = demo["task_name"][()].decode("utf-8")
+            if task_name not in task_demo_count:
+                task_demo_count[task_name] = 0
+            task_demo_count[task_name] += 1
+            
+            demos_all[f"demo_{count}"] = demo
+            language_all_uncond[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
+            language_all_cond[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|failure|>"
+            count += 1
+    print("Total negative demos:", count - num_positive_demos)
     for task_name, num_demos in task_demo_count.items():
         print(f"Task: {task_name}, Number of demos: {num_demos}")
         
     seq_max_len = 30
 
     if language_emb_model == "clip":
-        language_all_tokens = [
+        language_all_uncond_tokens = [
             tokenizer(
-                language_all[f"demo_{i}"],
+                language_all_uncond[f"demo_{i}"],
                 padding="max_length",
                 max_length=seq_max_len,
                 return_tensors="pt",
             )
-            for i in range(len(language_all))
+            for i in range(len(language_all_uncond))
         ]
-        language_input_ids = [
-            item.input_ids.unsqueeze(1) for item in language_all_tokens
+        language_uncond_input_ids = [
+            item.input_ids.unsqueeze(1) for item in language_all_uncond_tokens
         ]
-        language_attention_mask = [
-            item.attention_mask.unsqueeze(1) for item in language_all_tokens
+        language_uncond_attention_mask = [
+            item.attention_mask.unsqueeze(1) for item in language_all_uncond_tokens
+        ]
+        language_all_cond_tokens = [
+            tokenizer(
+                language_all_cond[f"demo_{i}"],
+                padding="max_length",
+                max_length=seq_max_len,
+                return_tensors="pt",
+            )
+            for i in range(len(language_all_cond))
+        ]
+        language_cond_input_ids = [
+            item.input_ids.unsqueeze(1) for item in language_all_cond_tokens
+        ]
+        language_cond_attention_mask = [
+            item.attention_mask.unsqueeze(1) for item in language_all_cond_tokens
         ]
     else:
         raise NotImplementedError(f"Language model {language_emb_model} not implemented")
@@ -403,7 +464,10 @@ def _convert_robomimic_to_replay(
             if key == "action":
                 if language_emb_model == "clip":
                     language_tokens = torch.cat(
-                        [language_input_ids[i], language_attention_mask[i]], dim=1
+                        [
+                            language_uncond_input_ids[i], language_uncond_attention_mask[i], 
+                            language_cond_input_ids[i], language_cond_attention_mask[i]
+                        ], dim=1
                     )
                     this_language_data.append(
                         language_tokens.repeat(this_data[-1].shape[0], 1, 1)
@@ -424,7 +488,7 @@ def _convert_robomimic_to_replay(
 
             this_language_data = np.concatenate(this_language_data, axis=0)
             if language_emb_model == "clip":
-                assert this_language_data.shape == (n_steps,) + tuple([2, seq_max_len])
+                assert this_language_data.shape == (n_steps,) + tuple([4, seq_max_len])
             else:
                 raise NotImplementedError(f"Language model {language_emb_model} not implemented")
         else:
