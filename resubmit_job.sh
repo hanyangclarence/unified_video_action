@@ -3,13 +3,18 @@
 # This script repeatedly submits a Slurm job, waits for it to start,
 # and then sleeps for 6 hours before resubmitting.
 
+if [ -z "$1" ]; then
+    echo "Usage: $0 <command_to_run...>"
+    exit 1
+fi
+
 while true
 do
     # Create slurm_output directory if it doesn't exist
     mkdir -p slurm_output
 
     # Submit the job and capture the output
-    sbatch_output=$(sbatch run_slurm_training.sh)
+    sbatch_output=$("$@")
 
     # Check if the job was submitted successfully
     if [ $? -ne 0 ]; then
