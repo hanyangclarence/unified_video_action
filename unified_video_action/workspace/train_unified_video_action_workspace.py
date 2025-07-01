@@ -193,11 +193,11 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
             ema = hydra.utils.instantiate(cfg.ema, model=self.ema_model)
 
         # configure env
-        if (
-            cfg.model.policy.action_model_params.predict_action
-            and "env_runner" in cfg.task
-        ):
-            env_runners = load_env_runner(cfg, self.output_dir)
+        # if (
+        #     cfg.model.policy.action_model_params.predict_action
+        #     and "env_runner" in cfg.task
+        # ):
+        #     env_runners = load_env_runner(cfg, self.output_dir)
 
         # configure checkpoint
         topk_manager = TopKCheckpointManager(
@@ -346,7 +346,7 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
             # ========= evaluate val action error =========
             if (
                 cfg.model.policy.action_model_params.predict_action
-                and "env_runner" not in cfg.task
+                # and "env_runner" not in cfg.task
             ):
                 ## if has similartor, skip this
                 act_log = test_action_l2(
@@ -359,14 +359,14 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
                 )
                 step_log.update(act_log)
 
-            # ========= simulator: run rollout =========
-            if (
-                cfg.model.policy.action_model_params.predict_action
-                and "env_runner" in cfg.task
-            ):
-                if (self.epoch % cfg.training.rollout_every) == 0:
-                    runner_log = env_rollout(cfg, env_runners, policy)
-                    step_log.update(runner_log)
+            # # ========= simulator: run rollout =========
+            # if (
+            #     cfg.model.policy.action_model_params.predict_action
+            #     and "env_runner" in cfg.task
+            # ):
+            #     if (self.epoch % cfg.training.rollout_every) == 0:
+            #         runner_log = env_rollout(cfg, env_runners, policy)
+            #         step_log.update(runner_log)
 
             # ========= checkpoint =========
             if (
