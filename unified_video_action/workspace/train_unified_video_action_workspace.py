@@ -390,6 +390,8 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
                     metric_dict[new_key] = value
 
                 # save topk checkpoints
+                if cfg.model.policy.action_model_params.predict_action:
+                    topk_manager.monitor_key = "val_action_l2_distances"
                 topk_ckpt_path = topk_manager.get_ckpt_path(metric_dict)
                 if topk_ckpt_path is not None:
                     self.save_checkpoint(path=topk_ckpt_path)
