@@ -21,4 +21,4 @@ accelerate launch --num_processes=8 train.py \
         logging.project=uva_pn \
         hydra.run.dir="checkpoints/uva_rlbench_pn_video_act_model" \
         checkpoint.topk.monitor_key="val_action_l2_distances" \
-        checkpoint.topk.format_str='epoch={epoch:04d}-val_action_l2_distances={val_action_l2_distances:.3f}.ckpt'
+        checkpoint.topk.format_str='epoch\={epoch:04d}-val_action_l2_distances\={val_action_l2_distances:.3f}.ckpt'
