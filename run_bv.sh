@@ -6,6 +6,7 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 #         --config-dir=. \
 #         --config-name=uva_rlbench_pn.yaml \
 #         model.policy.action_model_params.predict_action=False \
+#         model.policy.autoregressive_model_params.pretrained_model_path=checkpoints/libero10/checkpoints/libero10.ckpt \
 #         model.policy.selected_training_mode=video_model \
 #         model.policy.optimizer.learning_rate=1e-4 \
 #         logging.project=uva_pn \

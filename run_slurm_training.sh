@@ -20,11 +20,11 @@ export MUJOCO_PY_MUJOCO_PATH=/gpfs/u/home/LMCG/LMCGhazh/scratch/yanghan/embodied
 
 # LD_LIBRARY_PATH="/usr/lib/nvidia:$MUJOCO_PY_MUJOCO_PATH:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH" torchrun --nnode=1 --nproc_per_node=8 train.py --config-dir=. --config-name=uva_rlbench.yaml \
 #     model.policy.action_model_params.predict_action=False \
+#     model.policy.autoregressive_model_params.pretrained_model_path=checkpoints/libero10.ckpt \
 #     model.policy.selected_training_mode=video_model \
 #     model.policy.optimizer.learning_rate=1e-4 \
 #     logging.project=uva \
-#     hydra.run.dir="checkpoints/uva_rlbench_video_model" \
-#     training.resume=True
+#     hydra.run.dir="checkpoints/uva_rlbench_video_model"
 
 LD_LIBRARY_PATH="/usr/lib/nvidia:$MUJOCO_PY_MUJOCO_PATH:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH" torchrun --nnode=1 --nproc_per_node=8 train.py --config-dir=. --config-name=uva_rlbench.yaml \
     model.policy.action_model_params.predict_action=True \
