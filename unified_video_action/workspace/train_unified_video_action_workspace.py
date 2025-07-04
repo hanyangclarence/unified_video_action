@@ -203,6 +203,11 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
         topk_manager = TopKCheckpointManager(
             save_dir=os.path.join(self.output_dir, "checkpoints"), **cfg.checkpoint.topk
         )
+        monitor_key = topk_manager.monitor_key
+        topk_manager.format_str = "epoch={epoch:04d}-%s={%s:.3f}.ckpt" % (monitor_key, monitor_key)
+        print(
+            f"TopKCheckpointManager will monitor {monitor_key} and save checkpoints as {topk_manager.format_str}"
+        )
 
         # accelerator
         (
