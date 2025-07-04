@@ -42,7 +42,7 @@ checkpoint:
   save_last_ckpt: true
   save_last_snapshot: false
   topk:
-    monitor_key: val_action_l2_distances
+    monitor_key: test_mean_score
     format_str: epoch={epoch:04d}-test_mean_score={test_mean_score:.3f}.ckpt
     k: 1
     mode: max
