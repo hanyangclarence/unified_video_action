@@ -235,6 +235,10 @@ class RLBenchDataset(BaseImageDataset):
                         obs_dict[key] = obs_dict[key][:, 0:2, :]
                     else:
                         obs_dict[key] = obs_dict[key][:, 2:4, :]
+                else:
+                    pass
+                
+                print(f"Language shape: {obs_dict[key].shape}")
 
 
         if self.data_aug:
@@ -510,7 +514,7 @@ def _convert_robomimic_to_replay(
 
             this_language_data = np.concatenate(this_language_data, axis=0)
             if language_emb_model == "clip":
-                assert this_language_data.shape == (n_steps,) + tuple([4, seq_max_len])
+                assert this_language_data.shape == (n_steps,) + tuple([6, seq_max_len])
             else:
                 raise NotImplementedError(f"Language model {language_emb_model} not implemented")
         else:
