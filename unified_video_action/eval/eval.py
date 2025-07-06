@@ -30,7 +30,7 @@ from unified_video_action.utils.language_model import extract_text_features
 
 
 def prepare_data_predict_action(
-    cfg, x, actions, model, T, device, language_goal=None, eval=False
+    cfg, x, actions, model, T, device, language_goal=None, eval=False, pos_neg=False
 ):
     ## normalize actions and observations
     nactions = normalize_action(
@@ -71,11 +71,33 @@ def prepare_data_predict_action(
                     "input_ids": language_goal[:, 0].long()[:, 0],
                     "attention_mask": language_goal[:, 0].long()[:, 1],
                 }
-                text_latents = extract_text_features(
+                text_latents = extract_text_features(  # (B, 512)
                     model.text_model,
                     text_tokens,
                     language_emb_model=cfg.task.dataset.language_emb_model,
                 )
+                if pos_neg:
+                    text_tokens_cond = {
+                        "input_ids": language_goal[:, 0].long()[:, 2],
+                        "attention_mask": language_goal[:, 0].long()[:, 3],
+                    }
+                    text_latents_cond = extract_text_features(
+                        model.text_model,
+                        text_tokens_cond,
+                        language_emb_model=cfg.task.dataset.language_emb_model,
+                    )
+                    text_tokens_cond_negative = {
+                        "input_ids": language_goal[:, 0].long()[:, 4],
+                        "attention_mask": language_goal[:, 0].long()[:, 5],
+                    }
+                    text_latents_cond_negative = extract_text_features(
+                        model.text_model,
+                        text_tokens_cond_negative,
+                        language_emb_model=cfg.task.dataset.language_emb_model,
+                    )
+                    text_latents = torch.cat(
+                        [text_latents, text_latents_cond, text_latents_cond_negative], dim=0
+                    )  # (3B, 512), [uncond, pos_cond, neg_cond]
             elif cfg.task.dataset.language_emb_model == "flant5":
                 text_tokens = language_goal[:, 0].long()
                 text_latents = extract_text_features(
@@ -111,6 +133,7 @@ def test_video_fvd(
     predictions = []
 
     n_examples = 4
+    use_pos_neg_sample = hasattr(cfg.model.policy.autoregressive_model_params, "use_pos_neg_sample") and cfg.model.policy.autoregressive_model_params.use_pos_neg_sample
 
     with torch.no_grad():
         for n, batch in enumerate(loader):
@@ -157,22 +180,39 @@ def test_video_fvd(
                 trajectory,
                 proprioception_input,
             ) = prepare_data_predict_action(
-                cfg, x, actions, model, T, device, language_goal=language_goal
+                cfg, x, actions, model, T, device, language_goal=language_goal, pos_neg=use_pos_neg_sample
             )
-
-            z, act_out = model.model.sample_tokens(
-                bsz=k,
-                cond=c,
-                text_latents=text_latents,
-                num_iter=cfg.model.policy.autoregressive_model_params.num_iter,
-                cfg=cfg.model.policy.autoregressive_model_params.cfg,
-                cfg_schedule=cfg.model.policy.autoregressive_model_params.cfg_schedule,
-                temperature=cfg.model.policy.autoregressive_model_params.temperature,
-                history_nactions=history_trajectory,
-                nactions=trajectory,
-                proprioception_input=proprioception_input,
-                task_mode="full_dynamic_model",
-            )
+            
+            if use_pos_neg_sample:
+                c = torch.cat([c, c, c], dim=0)  # [uncond, pos_cond, neg_cond]
+                z, act_out = model.model.sample_tokens(
+                    bsz=k,
+                    cond=c,
+                    text_latents=text_latents,
+                    num_iter=cfg.model.policy.autoregressive_model_params.num_iter,
+                    cfg=cfg.model.policy.autoregressive_model_params.cfg,
+                    cfg_negative=cfg.model.policy.autoregressive_model_params.cfg_negative,
+                    cfg_schedule=cfg.model.policy.autoregressive_model_params.cfg_schedule,
+                    temperature=cfg.model.policy.autoregressive_model_params.temperature,
+                    history_nactions=history_trajectory,
+                    nactions=trajectory,
+                    proprioception_input=proprioception_input,
+                    task_mode="full_dynamic_model",
+                )
+            else:
+                z, act_out = model.model.sample_tokens(
+                    bsz=k,
+                    cond=c,
+                    text_latents=text_latents,
+                    num_iter=cfg.model.policy.autoregressive_model_params.num_iter,
+                    cfg=cfg.model.policy.autoregressive_model_params.cfg,
+                    cfg_schedule=cfg.model.policy.autoregressive_model_params.cfg_schedule,
+                    temperature=cfg.model.policy.autoregressive_model_params.temperature,
+                    history_nactions=history_trajectory,
+                    nactions=trajectory,
+                    proprioception_input=proprioception_input,
+                    task_mode="full_dynamic_model",
+                )
             pred = decode_from_sample_autoregressive(model.vae_model, z / 0.2325)
             pred = pred.clamp(-1, 1).cpu()
 

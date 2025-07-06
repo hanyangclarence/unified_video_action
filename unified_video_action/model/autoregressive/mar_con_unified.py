@@ -1232,3 +1232,20 @@ def mar_huge(**kwargs):
         **kwargs
     )
     return model
+
+
+from unified_video_action.model.autoregressive.mar_pn import MAR_PN
+
+def mar_pn_base(**kwargs):
+    model = MAR_PN(
+        encoder_embed_dim=768,
+        encoder_depth=12,
+        encoder_num_heads=12,
+        decoder_embed_dim=768,
+        decoder_depth=12,
+        decoder_num_heads=12,
+        mlp_ratio=4,
+        norm_layer=partial(nn.LayerNorm, eps=1e-6),
+        **kwargs
+    )
+    return model

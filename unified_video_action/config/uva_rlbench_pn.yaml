@@ -3,7 +3,7 @@ name: uva
 defaults:
   - _self_
   - task: rlbench_pn
-  - model: uva
+  - model: uva_pn
 
 dataloader:
   batch_size: 40

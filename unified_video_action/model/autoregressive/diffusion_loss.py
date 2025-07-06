@@ -65,17 +65,24 @@ class DiffLoss(nn.Module):
             loss = (loss * mask).sum() / mask.sum()
         return loss.mean()
 
-    def sample(self, z, temperature=1.0, cfg=1.0, text_latents=None):
+    def sample(self, z, temperature=1.0, cfg=1.0, text_latents=None, pos_neg_sample=False, cfg_negative=None):
         # diffusion loss sampling
-        if not cfg == 1.0:
-            noise = torch.randn(z.shape[0] // 2, self.in_channels).cuda()
-            noise = torch.cat([noise, noise], dim=0)
-            model_kwargs = dict(c=z, cfg_scale=cfg)
-            sample_fn = self.net.forward_with_cfg
+        if pos_neg_sample:
+            assert cfg_negative is not None, "cfg_negative must be provided for pos_neg_sample"
+            noise = torch.randn(z.shape[0] // 3, self.in_channels).cuda()
+            noise = torch.cat([noise, noise, noise], dim=0)
+            model_kwargs = dict(c=z, cfg_scale=cfg, cfg_negative_scale=cfg_negative)
+            sample_fn = self.net.forward_with_pn_cfg
         else:
-            noise = torch.randn(z.shape[0], self.in_channels).cuda()
-            model_kwargs = dict(c=z)
-            sample_fn = self.net.forward
+            if not cfg == 1.0:
+                noise = torch.randn(z.shape[0] // 2, self.in_channels).cuda()
+                noise = torch.cat([noise, noise], dim=0)
+                model_kwargs = dict(c=z, cfg_scale=cfg)
+                sample_fn = self.net.forward_with_cfg
+            else:
+                noise = torch.randn(z.shape[0], self.in_channels).cuda()
+                model_kwargs = dict(c=z)
+                sample_fn = self.net.forward
 
         sampled_token_latent = self.gen_diffusion.p_sample_loop(
             sample_fn,
@@ -290,4 +297,14 @@ class SimpleMLPAdaLN(nn.Module):
         cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
         eps = torch.cat([half_eps, half_eps], dim=0)
+        return torch.cat([eps, rest], dim=1)
+    
+    def forward_with_pn_cfg(self, x, t, c, cfg_scale, cfg_negative_scale):
+        half = x[: len(x) // 3]
+        combined = torch.cat([half, half, half], dim=0)
+        model_out = self.forward(combined, t, c)
+        eps, rest = model_out[:, : self.in_channels], model_out[:, self.in_channels :]
+        uncond_eps, cond_eps, cond_negative_eps = torch.split(eps, len(eps) // 3, dim=0)
+        half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps) - cfg_negative_scale * (cond_negative_eps - uncond_eps)
+        eps = torch.cat([half_eps, half_eps, half_eps], dim=0)
         return torch.cat([eps, rest], dim=1)

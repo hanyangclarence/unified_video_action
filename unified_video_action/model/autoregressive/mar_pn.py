@@ -32,6 +32,7 @@ class MAR_PN(MAR):
         text_latents=None,
         num_iter=64,
         cfg=1.0,
+        cfg_negative=1.0,
         cfg_schedule="linear",
         temperature=1.0,
         progress=False,
@@ -116,12 +117,26 @@ class MAR_PN(MAR):
                     proprioception_input=proprioception_input,
                 )
                 z = self.forward_mae_decoder(x, mask)
+                
+                # cfg schedule follow Muse
+                if cfg_schedule == "linear":
+                    cfg_iter = (
+                        1 + (cfg - 1) * (self.seq_len - mask_len[0]) / self.seq_len
+                    )
+                    cfg_negative_iter = (
+                        1 + (cfg_negative - 1) * (self.seq_len - mask_len[0]) / self.seq_len
+                    )
+                elif cfg_schedule == "constant":
+                    cfg_iter = cfg
+                    cfg_negative_iter = cfg_negative
+                else:
+                    raise NotImplementedError
 
                 if self.predict_action:
-                    act_cfg = 1.0
                     sampled_token_latent_act = self.diffactloss.sample(
-                        z, temperature, cfg=act_cfg, text_latents=text_latents
+                        z, temperature, cfg=cfg_iter, text_latents=text_latents, pos_neg_sample=True, cfg_negative=cfg_negative_iter
                     )
+                    sampled_token_latent_act, _, _ = sampled_token_latent_act.chunk(3, dim=0)  # Remove null class samples
                 else:
                     sampled_token_latent_act = None
 
@@ -166,30 +181,19 @@ class MAR_PN(MAR):
                 mask = mask_next
                 mask = rearrange(mask, "b (t s) -> b t s", t=self.n_frames)
 
-                if not cfg == 1.0:
-                    mask_to_pred = torch.cat([mask_to_pred, mask_to_pred], dim=0)
+                mask_to_pred = torch.cat([mask_to_pred, mask_to_pred, mask_to_pred], dim=0)
 
                 # sample token latents for this step
                 z = z[mask_to_pred.nonzero(as_tuple=True)]
-                # cfg schedule follow Muse
-                if cfg_schedule == "linear":
-                    cfg_iter = (
-                        1 + (cfg - 1) * (self.seq_len - mask_len[0]) / self.seq_len
-                    )
-                elif cfg_schedule == "constant":
-                    cfg_iter = cfg
-                else:
-                    raise NotImplementedError
 
                 sampled_token_latent = self.diffloss.sample(
-                    z, temperature, cfg_iter, text_latents=text_latents
+                    z, temperature, cfg_iter, text_latents=text_latents, pos_neg_sample=True, cfg_negative=cfg_negative_iter
                 )
 
-                if not cfg == 1.0:
-                    sampled_token_latent, _ = sampled_token_latent.chunk(
-                        2, dim=0
-                    )  # Remove null class samples
-                    mask_to_pred, _ = mask_to_pred.chunk(2, dim=0)
+                sampled_token_latent, _ = sampled_token_latent.chunk(
+                    3, dim=0
+                )  # Remove null class samples
+                mask_to_pred, _ = mask_to_pred.chunk(3, dim=0)
 
                 cur_tokens = rearrange(cur_tokens, "b t s c -> b (t s) c")
                 cur_tokens[mask_to_pred.nonzero(as_tuple=True)] = sampled_token_latent
@@ -204,10 +208,9 @@ class MAR_PN(MAR):
                         z, temperature, cfg_iter, text_latents=text_latents
                     )
 
-                    if not cfg == 1.0:
-                        sampled_wrist_token_latent, _ = (
-                            sampled_wrist_token_latent.chunk(2, dim=0)
-                        )  # Remove null class samples
+                    sampled_wrist_token_latent, _ = (
+                        sampled_wrist_token_latent.chunk(3, dim=0)
+                    )  # Remove null class samples
 
                     cur_wrist_tokens = rearrange(
                         cur_wrist_tokens, "b t s c -> b (t s) c"

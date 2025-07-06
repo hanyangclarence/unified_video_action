@@ -165,7 +165,7 @@ class DiffActLoss(nn.Module):
 
         return total_loss
 
-    def sample(self, z, temperature=1.0, cfg=1.0, text_latents=None):
+    def sample(self, z, temperature=1.0, cfg=1.0, text_latents=None, pos_neg_sample=False, cfg_negative=None):
         if self.act_model_type == "conv_fc":
             z = rearrange(z, "b (t s) c -> (b t) s c", t=self.n_frames)
             z = rearrange(z, "b (w h) c -> b w h c", w=self.w)
@@ -206,15 +206,22 @@ class DiffActLoss(nn.Module):
 
 
         # diffusion loss sampling
-        if not cfg == 1.0:
-            noise = torch.randn(z.shape[0] // 2, self.in_channels).cuda()
-            noise = torch.cat([noise, noise], dim=0)
-            model_kwargs = dict(c=z, cfg_scale=cfg)
-            sample_fn = self.net.forward_with_cfg
+        if pos_neg_sample:
+            assert cfg_negative is not None, "cfg_negative must be provided for pos_neg_sample"
+            noise = torch.randn(z.shape[0] // 3, self.in_channels).cuda()
+            noise = torch.cat([noise, noise, noise], dim=0)
+            model_kwargs = dict(c=z, cfg_scale=cfg, cfg_negative_scale=cfg_negative)
+            sample_fn = self.net.forward_with_pn_cfg
         else:
-            noise = torch.randn(z.shape[0], self.in_channels).cuda()
-            model_kwargs = dict(c=z)
-            sample_fn = self.net.forward
+            if not cfg == 1.0:
+                noise = torch.randn(z.shape[0] // 2, self.in_channels).cuda()
+                noise = torch.cat([noise, noise], dim=0)
+                model_kwargs = dict(c=z, cfg_scale=cfg)
+                sample_fn = self.net.forward_with_cfg
+            else:
+                noise = torch.randn(z.shape[0], self.in_channels).cuda()
+                model_kwargs = dict(c=z)
+                sample_fn = self.net.forward
 
         sampled_token_latent = self.gen_diffusion.p_sample_loop(
             sample_fn,
