@@ -21,7 +21,7 @@ policy:
 
   autoregressive_model_params:
     pretrained_model_path: 'pretrained_models/mar/mar_base/checkpoint-last.pth'
-    model_size: mar_base_pn
+    model_size: mar_pn_base
     img_size: 256
     vae_stride: 16
     patch_size: 1
