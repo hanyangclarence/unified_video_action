@@ -105,6 +105,9 @@ class MAR_PN(MAR):
                     cur_wrist_tokens = proprioception_input[
                         "pred_second_image_z"
                     ].clone()
+                
+                tokens = torch.cat([tokens, tokens, tokens], dim=0)
+                mask = torch.cat([mask, mask, mask], dim=0)
 
                 x = self.forward_mae_encoder(
                     tokens,
@@ -190,10 +193,10 @@ class MAR_PN(MAR):
                     z, temperature, cfg_iter, text_latents=text_latents, pos_neg_sample=True, cfg_negative=cfg_negative_iter
                 )
 
-                sampled_token_latent, _ = sampled_token_latent.chunk(
+                sampled_token_latent, _, _ = sampled_token_latent.chunk(
                     3, dim=0
                 )  # Remove null class samples
-                mask_to_pred, _ = mask_to_pred.chunk(3, dim=0)
+                mask_to_pred, _, _ = mask_to_pred.chunk(3, dim=0)
 
                 cur_tokens = rearrange(cur_tokens, "b t s c -> b (t s) c")
                 cur_tokens[mask_to_pred.nonzero(as_tuple=True)] = sampled_token_latent
