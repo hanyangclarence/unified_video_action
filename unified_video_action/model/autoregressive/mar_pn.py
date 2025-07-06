@@ -120,24 +120,10 @@ class MAR_PN(MAR):
                     proprioception_input=proprioception_input,
                 )
                 z = self.forward_mae_decoder(x, mask)
-                
-                # cfg schedule follow Muse
-                if cfg_schedule == "linear":
-                    cfg_iter = (
-                        1 + (cfg - 1) * (self.seq_len - mask_len[0]) / self.seq_len
-                    )
-                    cfg_negative_iter = (
-                        1 + (cfg_negative - 1) * (self.seq_len - mask_len[0]) / self.seq_len
-                    )
-                elif cfg_schedule == "constant":
-                    cfg_iter = cfg
-                    cfg_negative_iter = cfg_negative
-                else:
-                    raise NotImplementedError
 
                 if self.predict_action:
                     sampled_token_latent_act = self.diffactloss.sample(
-                        z, temperature, cfg=cfg_iter, text_latents=text_latents, pos_neg_sample=True, cfg_negative=cfg_negative_iter
+                        z, temperature, cfg=cfg, text_latents=text_latents, pos_neg_sample=True, cfg_negative=cfg_negative
                     )
                     sampled_token_latent_act, _, _ = sampled_token_latent_act.chunk(3, dim=0)  # Remove null class samples
                 else:
@@ -188,6 +174,19 @@ class MAR_PN(MAR):
 
                 # sample token latents for this step
                 z = z[mask_to_pred.nonzero(as_tuple=True)]
+                # cfg schedule follow Muse
+                if cfg_schedule == "linear":
+                    cfg_iter = (
+                        1 + (cfg - 1) * (self.seq_len - mask_len[0]) / self.seq_len
+                    )
+                    cfg_negative_iter = (
+                        1 + (cfg_negative - 1) * (self.seq_len - mask_len[0]) / self.seq_len
+                    )
+                elif cfg_schedule == "constant":
+                    cfg_iter = cfg
+                    cfg_negative_iter = cfg_negative
+                else:
+                    raise NotImplementedError
 
                 sampled_token_latent = self.diffloss.sample(
                     z, temperature, cfg_iter, text_latents=text_latents, pos_neg_sample=True, cfg_negative=cfg_negative_iter
