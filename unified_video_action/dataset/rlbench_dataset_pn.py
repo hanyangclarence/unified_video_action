@@ -234,10 +234,8 @@ class RLBenchDataset(BaseImageDataset):
                     if np.random.rand() < self.language_uncond_ratio:
                         obs_dict[key] = obs_dict[key][:, 0:2, :]
                     else:
-                        if data["is_success"]:
-                            obs_dict[key] = obs_dict[key][:, 2:4, :]
-                        else:
-                            obs_dict[key] = obs_dict[key][:, 4:6, :]
+                        obs_dict[key] = obs_dict[key][:, 2:4, :]
+
 
         if self.data_aug:
             image_tensor = torch.tensor(obs_dict["agentview_rgb"], dtype=torch.float32)
@@ -323,8 +321,8 @@ def _convert_robomimic_to_replay(
     file_handles = []  # Store file handles if you need to keep them open
     demos_all = {}
     language_all_uncond = {}
-    language_all_cond_success = {}
-    language_all_cond_failure = {}
+    language_all_cond = {}
+    language_all_cond_negative = {}
     count = 0
 
     if language_emb_model == "clip":
@@ -349,7 +347,6 @@ def _convert_robomimic_to_replay(
 
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
-            demo["is_success"] = np.array([True], dtype=np.bool_)
             demo_id = demo["demo_id"][()].decode("utf-8")
             if demo_id in all_demo_ids:
                 print(f"Duplicate demo_id found: {demo_id}. Skipping.")
@@ -363,8 +360,8 @@ def _convert_robomimic_to_replay(
             
             demos_all[f"demo_{count}"] = demo
             language_all_uncond[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
-            language_all_cond_success[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|success|>"
-            language_all_cond_failure[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|failure|>"
+            language_all_cond[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|success|>"
+            language_all_cond_negative[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|failure|>"
             count += 1
     print("Total positive demos:", count)
     for task_name, num_demos in task_demo_count.items():
@@ -386,7 +383,6 @@ def _convert_robomimic_to_replay(
         
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
-            demo["is_success"] = np.array([False], dtype=np.bool_)
             demo_id = demo["demo_id"][()].decode("utf-8")
             if demo_id in all_demo_ids:
                 print(f"Duplicate demo_id found: {demo_id}. Skipping.")
@@ -400,8 +396,8 @@ def _convert_robomimic_to_replay(
             
             demos_all[f"demo_{count}"] = demo
             language_all_uncond[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
-            language_all_cond_success[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|success|>"
-            language_all_cond_failure[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|failure|>"
+            language_all_cond[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|failure|>"
+            language_all_cond_negative[f"demo_{count}"] = language_all_uncond[f"demo_{count}"] + " <|success|>"
             count += 1
     print("Total negative demos:", count - num_positive_demos)
     for task_name, num_demos in task_demo_count.items():
@@ -425,35 +421,35 @@ def _convert_robomimic_to_replay(
         language_uncond_attention_mask = [
             item.attention_mask.unsqueeze(1) for item in language_all_uncond_tokens
         ]
-        language_all_cond_success_tokens = [
+        language_all_cond_tokens = [
             tokenizer(
-                language_all_cond_success[f"demo_{i}"],
+                language_all_cond[f"demo_{i}"],
                 padding="max_length",
                 max_length=seq_max_len,
                 return_tensors="pt",
             )
-            for i in range(len(language_all_cond_success))
+            for i in range(len(language_all_cond))
         ]
-        language_cond_success_input_ids = [
-            item.input_ids.unsqueeze(1) for item in language_all_cond_success_tokens
+        language_cond_input_ids = [
+            item.input_ids.unsqueeze(1) for item in language_all_cond_tokens
         ]
-        language_cond_success_attention_mask = [
-            item.attention_mask.unsqueeze(1) for item in language_all_cond_success_tokens
+        language_cond_attention_mask = [
+            item.attention_mask.unsqueeze(1) for item in language_all_cond_tokens
         ]
-        language_all_cond_failure_tokens = [
+        language_all_cond_negative_tokens = [
             tokenizer(
-                language_all_cond_failure[f"demo_{i}"],
+                language_all_cond_negative[f"demo_{i}"],
                 padding="max_length",
                 max_length=seq_max_len,
                 return_tensors="pt",
             )
-            for i in range(len(language_all_cond_failure))
+            for i in range(len(language_all_cond_negative))
         ]
-        language_cond_failure_input_ids = [
-            item.input_ids.unsqueeze(1) for item in language_all_cond_failure_tokens
+        language_cond_negative_input_ids = [
+            item.input_ids.unsqueeze(1) for item in language_all_cond_negative_tokens
         ]
-        language_cond_failure_attention_mask = [
-            item.attention_mask.unsqueeze(1) for item in language_all_cond_failure_tokens
+        language_cond_negative_attention_mask = [
+            item.attention_mask.unsqueeze(1) for item in language_all_cond_negative_tokens
         ]
     else:
         raise NotImplementedError(f"Language model {language_emb_model} not implemented")
@@ -474,15 +470,13 @@ def _convert_robomimic_to_replay(
     )
 
     # save lowdim data
-    for key in tqdm(lowdim_keys + ["action", "is_success"], desc="Loading lowdim data"):
+    for key in tqdm(lowdim_keys + ["action"], desc="Loading lowdim data"):
         data_key = "obs/" + key
         if key == "action":
             data_key = "actions"
             this_language_data = list()
         if key == "language":
             continue
-        if key == "is_success":
-            data_key = "is_success"
         this_data = list()
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
@@ -493,8 +487,8 @@ def _convert_robomimic_to_replay(
                     language_tokens = torch.cat(
                         [
                             language_uncond_input_ids[i], language_uncond_attention_mask[i], 
-                            language_cond_success_input_ids[i], language_cond_success_attention_mask[i],
-                            language_cond_failure_input_ids[i], language_cond_failure_attention_mask[i]
+                            language_cond_input_ids[i], language_cond_attention_mask[i],
+                            language_cond_negative_input_ids[i], language_cond_negative_attention_mask[i]
                         ], dim=1
                     )
                     this_language_data.append(
@@ -519,8 +513,6 @@ def _convert_robomimic_to_replay(
                 assert this_language_data.shape == (n_steps,) + tuple([4, seq_max_len])
             else:
                 raise NotImplementedError(f"Language model {language_emb_model} not implemented")
-        elif key == "is_success":
-            assert this_data.shape == (n_steps, 1)
         else:
             assert this_data.shape == (n_steps,) + tuple(
                 shape_meta["obs"][key]["shape"]
