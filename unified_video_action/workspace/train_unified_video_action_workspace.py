@@ -136,6 +136,7 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
 
             # configure validation dataset
             val_dataset = dataset.get_validation_dataset()
+            val_dataset.is_train = False
             val_dataloader = DataLoader(val_dataset, **cfg.val_dataloader)
             print(
                 "train dataset:",
