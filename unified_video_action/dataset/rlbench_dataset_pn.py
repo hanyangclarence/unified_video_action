@@ -349,7 +349,7 @@ def _convert_robomimic_to_replay(
 
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
-            demo["is_success"] = np.array([True], dtype=np.bool)
+            demo["is_success"] = np.array([True], dtype=np.bool_)
             demo_id = demo["demo_id"][()].decode("utf-8")
             if demo_id in all_demo_ids:
                 print(f"Duplicate demo_id found: {demo_id}. Skipping.")
@@ -386,7 +386,7 @@ def _convert_robomimic_to_replay(
         
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
-            demo["is_success"] = np.array([False], dtype=np.bool)
+            demo["is_success"] = np.array([False], dtype=np.bool_)
             demo_id = demo["demo_id"][()].decode("utf-8")
             if demo_id in all_demo_ids:
                 print(f"Duplicate demo_id found: {demo_id}. Skipping.")
