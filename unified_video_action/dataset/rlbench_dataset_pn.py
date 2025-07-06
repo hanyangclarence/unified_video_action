@@ -61,12 +61,15 @@ class RLBenchDataset(BaseImageDataset):
         rotation_transformer = RotationTransformer(
             from_rep="quaternion", to_rep=rotation_rep
         )
+        
+        if type(dataset_path) is str:
+            dataset_path = [dataset_path]
 
         replay_buffer = None
         if use_cache:
 
             if language_emb_model == "clip":
-                cache_zarr_path = dataset_path + "_clip_pn.zarr.zip"
+                cache_zarr_path = dataset_path[0] + "_clip_pn.zarr.zip"
             else:
                 raise NotImplementedError(f"Language model {language_emb_model} not implemented")
 
@@ -332,7 +335,9 @@ def _convert_robomimic_to_replay(
         raise NotImplementedError(f"Language model {language_emb_model} not implemented")
 
     # load positive samples
-    dataset_paths = glob.glob(dataset_path + "/expert_demos_*.hdf5")
+    dataset_paths = []
+    for pth in dataset_path:
+        dataset_paths.extend(glob.glob(pth + "/expert_demos_*.hdf5"))
     task_demo_count = {}
     all_demo_ids = []
 
@@ -370,7 +375,9 @@ def _convert_robomimic_to_replay(
     
     # then load negative samples
     num_positive_demos = count
-    dataset_paths = glob.glob(dataset_path + "/perturbed_demos_*.hdf5")
+    dataset_paths = []
+    for pth in dataset_path:
+        dataset_paths.extend(glob.glob(pth + "/perturbed_demos_*.hdf5"))
     task_demo_count = {}
     for dataset_path_each in dataset_paths:
         print(f"Loading {dataset_path_each}")

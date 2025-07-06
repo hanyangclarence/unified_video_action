@@ -307,6 +307,7 @@ def test_action_l2(
     plot_actions=False,
 ):
     action_l2_distances = []
+    use_pos_neg_sample = hasattr(cfg.model.policy.autoregressive_model_params, "use_pos_neg_sample") and cfg.model.policy.autoregressive_model_params.use_pos_neg_sample
 
     with torch.no_grad():
         for n, batch in enumerate(loader):
@@ -346,22 +347,39 @@ def test_action_l2(
                 trajectory,
                 proprioception_input,
             ) = prepare_data_predict_action(
-                cfg, x, actions, model, T, device, language_goal=language_goal
+                cfg, x, actions, model, T, device, language_goal=language_goal, pos_neg=use_pos_neg_sample
             )
-
-            z, act_out = model.model.sample_tokens(
-                bsz=B,
-                cond=c,
-                text_latents=text_latents,
-                num_iter=cfg.model.policy.autoregressive_model_params.num_iter,
-                cfg=cfg.model.policy.autoregressive_model_params.cfg,
-                cfg_schedule=cfg.model.policy.autoregressive_model_params.cfg_schedule,
-                temperature=cfg.model.policy.autoregressive_model_params.temperature,
-                history_nactions=history_trajectory,
-                nactions=trajectory,
-                proprioception_input=proprioception_input,
-                task_mode="policy_model",
-            )
+            
+            if use_pos_neg_sample:
+                c = torch.cat([c, c, c], dim=0)
+                z, act_out = model.model.sample_tokens(
+                    bsz=B,
+                    cond=c,
+                    text_latents=text_latents,
+                    num_iter=cfg.model.policy.autoregressive_model_params.num_iter,
+                    cfg=cfg.model.policy.autoregressive_model_params.cfg,
+                    cfg_negative=cfg.model.policy.autoregressive_model_params.cfg_negative,
+                    cfg_schedule=cfg.model.policy.autoregressive_model_params.cfg_schedule,
+                    temperature=cfg.model.policy.autoregressive_model_params.temperature,
+                    history_nactions=history_trajectory,
+                    nactions=trajectory,
+                    proprioception_input=proprioception_input,
+                    task_mode="policy_model",
+                )
+            else:
+                z, act_out = model.model.sample_tokens(
+                    bsz=B,
+                    cond=c,
+                    text_latents=text_latents,
+                    num_iter=cfg.model.policy.autoregressive_model_params.num_iter,
+                    cfg=cfg.model.policy.autoregressive_model_params.cfg,
+                    cfg_schedule=cfg.model.policy.autoregressive_model_params.cfg_schedule,
+                    temperature=cfg.model.policy.autoregressive_model_params.temperature,
+                    history_nactions=history_trajectory,
+                    nactions=trajectory,
+                    proprioception_input=proprioception_input,
+                    task_mode="policy_model",
+                )
 
             if cfg.model.policy.action_model_params.predict_action:
                 act_out = unnormalize_future_action(
