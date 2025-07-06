@@ -20,4 +20,4 @@ accelerate launch --num_processes=1 train.py \
         model.policy.autoregressive_model_params.pretrained_model_path="checkpoints/uva_rlbench_pn_video_model/checkpoints/best.ckpt" \
         model.policy.optimizer.learning_rate=1e-4 \
         logging.project=uva_pn \
-        hydra.run.dir="checkpoints/uva_rlbench_pn_video_act_model_debug
+        hydra.run.dir="checkpoints/uva_rlbench_pn_video_act_model_debug"
