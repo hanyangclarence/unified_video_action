@@ -237,9 +237,6 @@ class RLBenchDataset(BaseImageDataset):
                         obs_dict[key] = obs_dict[key][:, 2:4, :]
                 else:
                     pass
-                
-                print(f"Language shape: {obs_dict[key].shape}")
-
 
         if self.data_aug:
             image_tensor = torch.tensor(obs_dict["agentview_rgb"], dtype=torch.float32)
