@@ -120,7 +120,7 @@ def prepare_data_predict_action(
 
 
 def test_video_fvd(
-    cfg, model, loader, it, output_dir, device, name_label="", plot_actions=False
+    cfg, model, loader, it, output_dir, device, name_label="", plot_actions=False, use_pos_neg_sample=None
 ):
     losses = dict()
     losses["fvd"] = AverageMeter()
@@ -133,7 +133,8 @@ def test_video_fvd(
     predictions = []
 
     n_examples = 4
-    use_pos_neg_sample = hasattr(cfg.model.policy.autoregressive_model_params, "use_pos_neg_sample") and cfg.model.policy.autoregressive_model_params.use_pos_neg_sample
+    if use_pos_neg_sample not in [True, False]:
+        use_pos_neg_sample = hasattr(cfg.model.policy.autoregressive_model_params, "use_pos_neg_sample") and cfg.model.policy.autoregressive_model_params.use_pos_neg_sample
 
     with torch.no_grad():
         for n, batch in enumerate(loader):

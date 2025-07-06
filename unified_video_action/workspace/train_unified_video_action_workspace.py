@@ -346,6 +346,7 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
                     self.output_dir,
                     device,
                     name_label="_train_",
+                    use_pos_neg_sample=False
                 )
                 step_log.update(fvd_log_train)
 
