@@ -62,8 +62,7 @@ class RLBenchDataset(BaseImageDataset):
             from_rep="quaternion", to_rep=rotation_rep
         )
         
-        if type(dataset_path) is str:
-            dataset_path = [dataset_path]
+        dataset_path = [dataset_path] if not isinstance(dataset_path, list) else dataset_path
 
         replay_buffer = None
         if use_cache:
