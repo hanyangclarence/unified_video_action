@@ -360,6 +360,9 @@ def _convert_robomimic_to_replay(
             if task_name not in task_demo_count:
                 task_demo_count[task_name] = 0
             task_demo_count[task_name] += 1
+            if task_demo_count[task_name] > 500:
+                print(f"Skipping task {task_name} with more than 500 demos.")
+                continue
             
             demos_all[f"demo_{count}"] = demo
             language_all_uncond[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
@@ -398,6 +401,9 @@ def _convert_robomimic_to_replay(
             if task_name not in task_demo_count:
                 task_demo_count[task_name] = 0
             task_demo_count[task_name] += 1
+            if task_demo_count[task_name] > 500:
+                print(f"Skipping task {task_name} with more than 500 demos.")
+                continue
             
             demos_all[f"demo_{count}"] = demo
             language_all_uncond[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
