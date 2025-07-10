@@ -132,7 +132,7 @@ def test_video_fvd(
     reals = []
     predictions = []
 
-    n_examples = 4
+    n_examples = 5
     if use_pos_neg_sample not in [True, False]:
         use_pos_neg_sample = hasattr(cfg.model.policy.autoregressive_model_params, "use_pos_neg_sample") and cfg.model.policy.autoregressive_model_params.use_pos_neg_sample
 
