@@ -59,6 +59,8 @@ class RLBenchRunner(BaseImageRunner):
         self,
         output_dir,
         shape_meta,
+        start_episode=0,
+        eval_episodes=100,
         max_steps=500,
         n_obs_steps=16,
         n_action_steps=8,
@@ -87,10 +89,9 @@ class RLBenchRunner(BaseImageRunner):
         self.abs_action = abs_action
         self.tqdm_interval_sec = tqdm_interval_sec
         
-        self.start_episode = 0
-        self.eval_episodes = 100
+        self.start_episode = start_episode
+        self.eval_episodes = eval_episodes
         self.retry_for_InvalidActionError = 5
-        self.eval_log_dir = '/root/RACER/uva_output'
         self.episode_length = 25
         self.output_dir = output_dir
         

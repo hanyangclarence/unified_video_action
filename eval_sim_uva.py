@@ -25,7 +25,9 @@ if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
 @click.option("-c", "--checkpoint", required=True)
 @click.option("-o", "--output_dir", required=True)
 @click.option("-d", "--device", default="cuda:0")
-def main(checkpoint, output_dir, device):
+@click.option("-s", "--start_episode", default=0)
+@click.option("-e", "--eval_episodes", default=100)
+def main(checkpoint, output_dir, device, start_episode, eval_episodes):
 
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -54,6 +56,8 @@ def main(checkpoint, output_dir, device):
                 }
             }
         }
+        cfg.task.env_runner.start_episode = start_episode
+        cfg.task.env_runner.eval_episodes = eval_episodes
         
     # configure workspace
     cls = hydra.utils.get_class(cfg.model._target_)
