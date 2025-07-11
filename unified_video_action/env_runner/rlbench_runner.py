@@ -138,6 +138,11 @@ class RLBenchRunner(BaseImageRunner):
     
     def eval_episode(self, task_name, episode_num, policy, **kwargs):
         device = policy.device
+        save_dir = f"{self.output_dir}/{task_name}/{episode_num}/"
+        os.makedirs(save_dir, exist_ok=True)
+        if os.path.exists(os.path.join(save_dir, "log.json")):
+            print(f"Episode {episode_num} for task {task_name} already exists, skipping.")
+            return None
         
         # start the episode
         pbar = tqdm(total=self.episode_length, desc=f"Episode {episode_num} for task {task_name} ... ", leave=False)
@@ -184,8 +189,6 @@ class RLBenchRunner(BaseImageRunner):
                 env_action = self.undo_transform_action(action)
             obs, reward, done, info = env.step(env_action[0])
             
-            save_dir = f"{self.output_dir}/{task_name}/{episode_num}/"
-            os.makedirs(save_dir, exist_ok=True)
             rgb_uint8 = (np.transpose(obs['agentview_rgb'][0], (1, 2, 0)) * 255).astype(np.uint8)
             frames.append(Image.fromarray(rgb_uint8))
             
@@ -209,8 +212,6 @@ class RLBenchRunner(BaseImageRunner):
         env.close()
         print(f"Episode {episode_num} for task {task_name} finished.")
         
-        save_dir = f"{self.output_dir}/{task_name}/{episode_num}/"
-        os.makedirs(save_dir, exist_ok=True)
         gif_path = os.path.join(save_dir, "agentview_rgb.gif")
         frames[0].save(
             gif_path,
