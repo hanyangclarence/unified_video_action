@@ -1,8 +1,13 @@
 import os
 import json
 from collections import defaultdict
+import argparse
 
-root = "/root/uva_rollout"
+parser = argparse.ArgumentParser()
+parser.add_argument("--root", required=True, type=str)
+args = parser.parse_args()
+
+root = args.root
 eval_log_path = os.path.join(root, "evaluation_log.json")
 
 # Initialize counters
