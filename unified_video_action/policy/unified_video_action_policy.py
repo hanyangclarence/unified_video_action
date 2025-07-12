@@ -219,7 +219,7 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
 
 
     def predict_action(
-        self, obs_dict: Dict[str, torch.Tensor], language_goal=None
+        self, obs_dict: Dict[str, torch.Tensor], language_goal=None, pos_neg_sample=False,
     ) -> Dict[str, torch.Tensor]:
         """
         obs_dict: must include "obs" key
@@ -231,6 +231,12 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
 
         ## language goal
         text_latents = None
+        if pos_neg_sample:
+            assert language_goal is not None and len(language_goal) == 1
+            uncond = language_goal[0]
+            pos_cond = uncond + " <|success|>"
+            neg_cond = uncond + " <|failure|>"
+            language_goal = [uncond, pos_cond, neg_cond]
         if self.language_emb_model is not None:
             if "umi" in self.task_name:
                 text_latents = language_goal
@@ -285,19 +291,36 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
 
         c, latent_size = extract_latent_autoregressive(self.vae_model, c.detach())
 
-        z, act_out = self.model.sample_tokens(
-            bsz=B,
-            cond=c,
-            text_latents=text_latents,
-            num_iter=self.autoregressive_model_params.num_iter,
-            cfg=self.autoregressive_model_params.cfg,
-            cfg_schedule=self.autoregressive_model_params.cfg_schedule,
-            temperature=self.autoregressive_model_params.temperature,
-            history_nactions=history_nactions,
-            proprioception_input=proprioception_input,
-            task_mode="policy_model",
-            vae_model=self.vae_model,
-        )
+        if pos_neg_sample:
+            c = torch.cat([c, c, c], dim=0)  # uncond, pos_cond, neg_cond
+            z, act_out = self.model.sample_tokens(
+                bsz=B,
+                cond=c,
+                text_latents=text_latents,
+                num_iter=self.autoregressive_model_params.num_iter,
+                cfg=self.autoregressive_model_params.cfg,
+                cfg_negative=self.autoregressive_model_params.cfg_negative,
+                cfg_schedule=self.autoregressive_model_params.cfg_schedule,
+                temperature=self.autoregressive_model_params.temperature,
+                history_nactions=history_nactions,
+                proprioception_input=proprioception_input,
+                task_mode="policy_model",
+                vae_model=self.vae_model,
+            )
+        else:
+            z, act_out = self.model.sample_tokens(
+                bsz=B,
+                cond=c,
+                text_latents=text_latents,
+                num_iter=self.autoregressive_model_params.num_iter,
+                cfg=self.autoregressive_model_params.cfg,
+                cfg_schedule=self.autoregressive_model_params.cfg_schedule,
+                temperature=self.autoregressive_model_params.temperature,
+                history_nactions=history_nactions,
+                proprioception_input=proprioception_input,
+                task_mode="policy_model",
+                vae_model=self.vae_model,
+            )
 
         # unnormalize prediction
         Da = self.action_dim

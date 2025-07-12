@@ -27,7 +27,8 @@ if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
 @click.option("-d", "--device", default="cuda:0")
 @click.option("-s", "--start_episode", default=0)
 @click.option("-e", "--eval_episodes", default=100)
-def main(checkpoint, output_dir, device, start_episode, eval_episodes):
+@click.option("--pos_neg_sample", default=False, required=False)
+def main(checkpoint, output_dir, device, start_episode, eval_episodes, pos_neg_sample):
 
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -58,6 +59,7 @@ def main(checkpoint, output_dir, device, start_episode, eval_episodes):
         }
         cfg.task.env_runner.start_episode = start_episode
         cfg.task.env_runner.eval_episodes = eval_episodes
+        run_kwargs = {"pos_neg_sample": pos_neg_sample}
         
     # configure workspace
     cls = hydra.utils.get_class(cfg.model._target_)
@@ -73,25 +75,9 @@ def main(checkpoint, output_dir, device, start_episode, eval_episodes):
     policy.to(device)
     policy.eval()
 
-    env_runners = load_env_runner(cfg, output_dir)
+    env_runner = load_env_runner(cfg, output_dir)
 
-    if "libero" in cfg.task.name:
-        step_log = {}
-        for env_runner in env_runners:
-            runner_log = env_runner.run(policy)
-            step_log.update(runner_log)
-            print(step_log)
-
-        assert "test_mean_score" not in step_log
-        all_test_mean_score = {
-            k: v for k, v in step_log.items() if "test/" in k and "_mean_score" in k
-        }
-        step_log["test_mean_score"] = np.mean(list(all_test_mean_score.values()))
-
-        runner_log = step_log
-    else:
-        env_runner = env_runners
-        runner_log = env_runner.run(policy)
+    runner_log = env_runner.run(policy, **run_kwargs)
     print("Runner log:", runner_log)
 
 if __name__ == "__main__":
