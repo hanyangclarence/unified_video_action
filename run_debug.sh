@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export CUDA_VISIBLE_DEVICES=0
 export WANDB_API_KEY=28b3c634497c0dc6c16767729d4719b1012a94f2
 export WANDB_MODE=disabled
 export DEBUG=1
@@ -22,7 +22,7 @@ export MUJOCO_PY_MUJOCO_PATH=/gpfs/u/home/LMCG/LMCGhazh/scratch/yanghan/embodied
 #         logging.project=uva_debug \
 #         hydra.run.dir="checkpoints/uva_rlbench_pn_video_act_model_debug"
 
-accelerate launch --num_processes=1 train.py \
+accelerate launch --num_processes=1 --gpu_ids=0 train.py \
     --config-dir=. \
     --config-name=uva_libero10.yaml \
     model.policy.action_model_params.predict_action=False \
@@ -30,4 +30,3 @@ accelerate launch --num_processes=1 train.py \
     model.policy.optimizer.learning_rate=1e-4 \
     logging.project=uva_debug \
     hydra.run.dir="checkpoints/uva_libero10_video_model_debug" \
-    task.libero10.dataset.dataset_path="/proj/inf-scaling/yanghan/data/libero/libero_10"
