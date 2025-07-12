@@ -13,11 +13,21 @@ export MUJOCO_PY_MUJOCO_PATH=/gpfs/u/home/LMCG/LMCGhazh/scratch/yanghan/embodied
 #     hydra.run.dir="checkpoints/uva_rlbench_video_model_debug"
 
 
+# accelerate launch --num_processes=1 train.py \
+#         --config-dir=. \
+#         --config-name=uva_rlbench_pn.yaml \
+#         model.policy.action_model_params.predict_action=True \
+#         model.policy.autoregressive_model_params.pretrained_model_path="checkpoints/uva_rlbench_pn_video_model/checkpoints/best.ckpt" \
+#         model.policy.optimizer.learning_rate=1e-4 \
+#         logging.project=uva_debug \
+#         hydra.run.dir="checkpoints/uva_rlbench_pn_video_act_model_debug"
+
 accelerate launch --num_processes=1 train.py \
-        --config-dir=. \
-        --config-name=uva_rlbench_pn.yaml \
-        model.policy.action_model_params.predict_action=True \
-        model.policy.autoregressive_model_params.pretrained_model_path="checkpoints/uva_rlbench_pn_video_model/checkpoints/best.ckpt" \
-        model.policy.optimizer.learning_rate=1e-4 \
-        logging.project=uva_debug \
-        hydra.run.dir="checkpoints/uva_rlbench_pn_video_act_model_debug"
+    --config-dir=. \
+    --config-name=uva_libero10.yaml \
+    model.policy.action_model_params.predict_action=False \
+    model.policy.selected_training_mode=video_model \
+    model.policy.optimizer.learning_rate=1e-4 \
+    logging.project=uva_debug \
+    hydra.run.dir="checkpoints/uva_libero10_video_model_debug" \
+    task.libero10.dataset.dataset_path="/proj/inf-scaling/yanghan/data/libero/libero_10"
