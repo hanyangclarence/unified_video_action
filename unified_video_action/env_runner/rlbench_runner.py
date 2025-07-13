@@ -194,7 +194,7 @@ class RLBenchRunner(BaseImageRunner):
             
             if kwargs["task_mode"] == "full_dynamic_model":
                 pred_video = np_action_dict["video"].squeeze(0)  # (T, H, W, C)
-                rollout_video = obs["agentview_rgb"][0][-self.n_action_steps:]  # (T, C, H, W)
+                rollout_video = obs["agentview_rgb"][-self.n_action_steps:]  # (T, C, H, W)
                 rollout_video = np.transpose((rollout_video * 255).astype(np.uint8), (0, 2, 3, 1))  # (T, H, W, C)
                 
                 pred_video_frames = [
@@ -208,7 +208,7 @@ class RLBenchRunner(BaseImageRunner):
                     os.path.join(save_dir, f"pred_video_{step}.gif"),
                     save_all=True,
                     append_images=pred_video_frames[1:],
-                    duration=500,
+                    duration=1000,
                     loop=0
                 )
                 rollout_video_frames[0].save(

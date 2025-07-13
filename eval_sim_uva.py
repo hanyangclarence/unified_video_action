@@ -28,7 +28,7 @@ if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
 @click.option("-s", "--start_episode", default=0)
 @click.option("-e", "--eval_episodes", default=100)
 @click.option("--pos_neg_sample", default=False, required=False)
-@click.option("--task_mode", default="policy_model", required=False)
+@click.option("--task_mode", default="policy_model", required=False, choices=["policy_model", "full_dynamic_model"])
 def main(checkpoint, output_dir, device, start_episode, eval_episodes, pos_neg_sample, task_mode):
 
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
