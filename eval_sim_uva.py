@@ -28,7 +28,8 @@ if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
 @click.option("-s", "--start_episode", default=0)
 @click.option("-e", "--eval_episodes", default=100)
 @click.option("--pos_neg_sample", default=False, required=False)
-def main(checkpoint, output_dir, device, start_episode, eval_episodes, pos_neg_sample):
+@click.option("--task_mode", default="policy_model", required=False)
+def main(checkpoint, output_dir, device, start_episode, eval_episodes, pos_neg_sample, task_mode):
 
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -59,8 +60,11 @@ def main(checkpoint, output_dir, device, start_episode, eval_episodes, pos_neg_s
         }
         cfg.task.env_runner.start_episode = start_episode
         cfg.task.env_runner.eval_episodes = eval_episodes
-        run_kwargs = {"pos_neg_sample": pos_neg_sample}
-        
+        run_kwargs = {
+            "pos_neg_sample": pos_neg_sample,
+            "task_mode": task_mode
+        }
+
     # configure workspace
     cls = hydra.utils.get_class(cfg.model._target_)
     workspace = cls(cfg, output_dir=output_dir)

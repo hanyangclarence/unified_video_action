@@ -192,6 +192,33 @@ class RLBenchRunner(BaseImageRunner):
             rgb_uint8 = (np.transpose(obs['agentview_rgb'][0], (1, 2, 0)) * 255).astype(np.uint8)
             frames.append(Image.fromarray(rgb_uint8))
             
+            if kwargs["task_mode"] == "full_dynamic_model":
+                pred_video = np_action_dict["video"].squeeze(0)  # (T, H, W, C)
+                rollout_video = obs["agentview_rgb"][0][-self.n_action_steps:]  # (T, C, H, W)
+                rollout_video = np.transpose((rollout_video * 255).astype(np.uint8), (0, 2, 3, 1))  # (T, H, W, C)
+                
+                pred_video_frames = [
+                    Image.fromarray(pred_video[i]) for i in range(pred_video.shape[0])
+                ]
+                rollout_video_frames = [
+                    Image.fromarray(rollout_video[i]) for i in range(rollout_video.shape[0])
+                ]
+                
+                pred_video_frames[0].save(
+                    os.path.join(save_dir, f"pred_video_{step}.gif"),
+                    save_all=True,
+                    append_images=pred_video_frames[1:],
+                    duration=500,
+                    loop=0
+                )
+                rollout_video_frames[0].save(
+                    os.path.join(save_dir, f"rollout_video_{step}.gif"),
+                    save_all=True,
+                    append_images=rollout_video_frames[1:],
+                    duration=500,
+                    loop=0
+                )
+
             if env.is_success():
                 success = True
                 break

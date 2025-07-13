@@ -4,6 +4,7 @@ from typing import Dict, Tuple
 import torch.nn.functional as F
 import random
 import numpy as np
+from einops import rearrange
 
 from unified_video_action.model.common.normalizer import LinearNormalizer
 from unified_video_action.policy.base_image_policy import BaseImagePolicy
@@ -219,7 +220,8 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
 
 
     def predict_action(
-        self, obs_dict: Dict[str, torch.Tensor], language_goal=None, pos_neg_sample=False,
+        self, obs_dict: Dict[str, torch.Tensor], language_goal=None, 
+        pos_neg_sample=False, task_mode="policy_model"
     ) -> Dict[str, torch.Tensor]:
         """
         obs_dict: must include "obs" key
@@ -304,7 +306,7 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
                 temperature=self.autoregressive_model_params.temperature,
                 history_nactions=history_nactions,
                 proprioception_input=proprioception_input,
-                task_mode="policy_model",
+                task_mode=task_mode,
                 vae_model=self.vae_model,
             )
         else:
@@ -318,7 +320,7 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
                 temperature=self.autoregressive_model_params.temperature,
                 history_nactions=history_nactions,
                 proprioception_input=proprioception_input,
-                task_mode="policy_model",
+                task_mode=task_mode,
                 vae_model=self.vae_model,
             )
 
@@ -340,6 +342,16 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
             "action": action,
             "action_pred": action_pred,
         }
+        
+        if task_mode == "full_dynamic_model":
+            # also decode video
+            pred = self.vae_model.decode(z / 0.2325)
+            pred = pred.clamp(-1, 1).detach().cpu()
+            pred = 1 + rearrange(pred, "(b t) c h w -> b t h w c", b=B)
+            pred = pred * 127.5
+            pred = pred.to(torch.uint8)
+            result["video"] = pred
+        
         return result
 
     # ========= training  ============
