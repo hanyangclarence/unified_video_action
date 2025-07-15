@@ -69,6 +69,8 @@ class RLBenchRunner(BaseImageRunner):
         fps=10,
         crf=22,
         tqdm_interval_sec=5.0,
+        task_start=0,
+        task_end=11,
     ):
         super().__init__(output_dir)
 
@@ -80,7 +82,7 @@ class RLBenchRunner(BaseImageRunner):
 
             rotation_transformer = RotationTransformer("quaternion", "rotation_6d")
 
-        self.tasks = selected_task_list
+        self.tasks = selected_task_list[task_start:task_end]
         self.n_obs_steps = n_obs_steps
         self.n_action_steps = n_action_steps
         self.past_action = past_action
