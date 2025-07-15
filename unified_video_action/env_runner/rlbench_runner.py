@@ -178,8 +178,8 @@ class RLBenchRunner(BaseImageRunner):
                 env_action = self.undo_transform_action(action)
             obs, reward, done, info = env.step(env_action[0])
             
-            rgb_uint8 = (np.transpose(obs['agentview_rgb'][0], (1, 2, 0)) * 255).astype(np.uint8)
-            frames.append(Image.fromarray(rgb_uint8))
+            rgb_uint8 = (np.transpose(obs["agentview_rgb"], (0, 2, 3, 1)) * 255).astype(np.uint8)
+            frames.extend([Image.fromarray(frame) for frame in rgb_uint8])
             
             if kwargs["task_mode"] == "full_dynamic_model":
                 pred_video = np_action_dict["video"].squeeze(0)  # (T, H, W, C)
