@@ -294,7 +294,7 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
         c, latent_size = extract_latent_autoregressive(self.vae_model, c.detach())
 
         cfg_pos = cfg_pos if cfg_pos is not None else self.autoregressive_model_params.cfg
-        cfg_neg = cfg_neg if cfg_neg is not None else self.autoregressive_model_params.cfg_negative
+        cfg_neg = cfg_neg if cfg_neg is not None else self.autoregressive_model_params.get("cfg_negative", None)
         if pos_neg_sample:
             c = torch.cat([c, c, c], dim=0)  # uncond, pos_cond, neg_cond
             z, act_out = self.model.sample_tokens(
