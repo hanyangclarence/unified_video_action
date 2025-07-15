@@ -179,8 +179,8 @@ class RLBenchRunner(BaseImageRunner):
             obs, reward, done, info = env.step(env_action[0])
             
             rgb_uint8 = (np.transpose(obs["agentview_rgb"], (0, 2, 3, 1)) * 255).astype(np.uint8)
-            frames.extend([Image.fromarray(frame) for frame in rgb_uint8])
-            
+            frames.extend([Image.fromarray(frame) for frame in rgb_uint8[-self.n_action_steps:]])
+
             if kwargs["task_mode"] == "full_dynamic_model":
                 pred_video = np_action_dict["video"].squeeze(0)  # (T, H, W, C)
                 rollout_video = obs["agentview_rgb"][-self.n_action_steps:]  # (T, C, H, W)
