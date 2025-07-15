@@ -221,7 +221,7 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
 
     def predict_action(
         self, obs_dict: Dict[str, torch.Tensor], language_goal=None, 
-        pos_neg_sample=False, task_mode="policy_model"
+        pos_neg_sample=False, task_mode="policy_model", cfg_pos=None, cfg_neg=None
     ) -> Dict[str, torch.Tensor]:
         """
         obs_dict: must include "obs" key
@@ -293,6 +293,8 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
 
         c, latent_size = extract_latent_autoregressive(self.vae_model, c.detach())
 
+        cfg_pos = cfg_pos if cfg_pos is not None else self.autoregressive_model_params.cfg
+        cfg_neg = cfg_neg if cfg_neg is not None else self.autoregressive_model_params.cfg_negative
         if pos_neg_sample:
             c = torch.cat([c, c, c], dim=0)  # uncond, pos_cond, neg_cond
             z, act_out = self.model.sample_tokens(
@@ -300,8 +302,8 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
                 cond=c,
                 text_latents=text_latents,
                 num_iter=self.autoregressive_model_params.num_iter,
-                cfg=self.autoregressive_model_params.cfg,
-                cfg_negative=self.autoregressive_model_params.cfg_negative,
+                cfg=cfg_pos,
+                cfg_negative=cfg_neg,
                 cfg_schedule=self.autoregressive_model_params.cfg_schedule,
                 temperature=self.autoregressive_model_params.temperature,
                 history_nactions=history_nactions,
@@ -315,7 +317,7 @@ class UnifiedVideoActionPolicy(BaseImagePolicy):
                 cond=c,
                 text_latents=text_latents,
                 num_iter=self.autoregressive_model_params.num_iter,
-                cfg=self.autoregressive_model_params.cfg,
+                cfg=cfg_pos,
                 cfg_schedule=self.autoregressive_model_params.cfg_schedule,
                 temperature=self.autoregressive_model_params.temperature,
                 history_nactions=history_nactions,

@@ -31,7 +31,11 @@ if "DEBUG" in os.environ and os.environ["DEBUG"] == "1":
 @click.option("--task_mode", default="policy_model", required=False)  # choices=["policy_model", "full_dynamic_model"]
 @click.option("--task_start", default=0, type=int, required=False)
 @click.option("--task_end", default=11, type=int, required=False)
-def main(checkpoint, output_dir, device, start_episode, eval_episodes, pos_neg_sample, task_mode, task_start, task_end):
+@click.option("--cfg_pos", type=int, default=None, required=False)
+@click.option("--cfg_neg", type=int, default=None, required=False)
+def main(
+    checkpoint, output_dir, device, start_episode, eval_episodes, 
+    pos_neg_sample, task_mode, task_start, task_end, cfg_pos, cfg_neg):
 
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -66,7 +70,9 @@ def main(checkpoint, output_dir, device, start_episode, eval_episodes, pos_neg_s
         cfg.task.env_runner.task_end = task_end
         run_kwargs = {
             "pos_neg_sample": pos_neg_sample,
-            "task_mode": task_mode
+            "task_mode": task_mode,
+            "cfg_pos": cfg_pos,
+            "cfg_neg": cfg_neg
         }
 
     # configure workspace
