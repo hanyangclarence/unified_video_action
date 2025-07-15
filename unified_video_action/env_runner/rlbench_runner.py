@@ -96,37 +96,24 @@ class RLBenchRunner(BaseImageRunner):
         self.retry_for_InvalidActionError = 5
         self.episode_length = 25
         self.output_dir = output_dir
+        self.shape_meta = shape_meta
         
         self.metric_dict = {}
         self.debug = False
-        
-        def env_fn(task_name, episode_num, episode_length):
-            return MultiStepWrapper(
-                VideoRecordingWrapper(
-                    RLBenchEnv(
-                        task_name=task_name,
-                        dataset_root='/root/RACER/data/rlbench/test',
-                        episode_length=episode_length,
-                        episode_num=episode_num,
-                        shape_meta=shape_meta,
-                    ),
-                    video_recoder=VideoRecorder.create_h264(
-                        fps=fps,
-                        codec='h264',
-                        input_pix_fmt='rgb24',
-                        crf=crf,
-                        thread_type='FRAME',
-                        thread_count=1
-                    ),
-                    file_path=None,
-                    steps_per_render=2
+    
+    def env_fn(self, task_name, episode_num, episode_length):        
+        return MultiStepWrapper(
+                RLBenchEnv(
+                    task_name=task_name,
+                    dataset_root='/root/RACER/data/rlbench/test',
+                    episode_length=episode_length,
+                    episode_num=episode_num,
+                    shape_meta=self.shape_meta,
                 ),
-                n_obs_steps=n_obs_steps,
-                n_action_steps=n_action_steps,
-                max_episode_steps=max_steps
-            )
-        
-        self.env_fn = env_fn
+            n_obs_steps=self.n_obs_steps,
+            n_action_steps=self.n_action_steps,
+            max_episode_steps=self.max_steps,
+        )
 
     def run(self, policy: BaseImagePolicy, vis_pred_video=False, **kwargs):
         device = policy.device
