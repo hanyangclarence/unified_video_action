@@ -69,6 +69,8 @@ class RLBenchRunner(BaseImageRunner):
         fps=10,
         crf=22,
         tqdm_interval_sec=5.0,
+        task_start=0,
+        task_end=11,
     ):
         super().__init__(output_dir)
 
@@ -80,7 +82,7 @@ class RLBenchRunner(BaseImageRunner):
 
             rotation_transformer = RotationTransformer("quaternion", "rotation_6d")
 
-        self.tasks = selected_task_list
+        self.tasks = selected_task_list[task_start:task_end]
         self.n_obs_steps = n_obs_steps
         self.n_action_steps = n_action_steps
         self.past_action = past_action
@@ -94,37 +96,24 @@ class RLBenchRunner(BaseImageRunner):
         self.retry_for_InvalidActionError = 5
         self.episode_length = 25
         self.output_dir = output_dir
+        self.shape_meta = shape_meta
         
         self.metric_dict = {}
         self.debug = False
-        
-        def env_fn(task_name, episode_num, episode_length):
-            return MultiStepWrapper(
-                VideoRecordingWrapper(
-                    RLBenchEnv(
-                        task_name=task_name,
-                        dataset_root='/root/RACER/data/rlbench/test',
-                        episode_length=episode_length,
-                        episode_num=episode_num,
-                        shape_meta=shape_meta,
-                    ),
-                    video_recoder=VideoRecorder.create_h264(
-                        fps=fps,
-                        codec='h264',
-                        input_pix_fmt='rgb24',
-                        crf=crf,
-                        thread_type='FRAME',
-                        thread_count=1
-                    ),
-                    file_path=None,
-                    steps_per_render=2
+    
+    def env_fn(self, task_name, episode_num, episode_length):        
+        return MultiStepWrapper(
+                RLBenchEnv(
+                    task_name=task_name,
+                    dataset_root='/root/RACER/data/rlbench/test',
+                    episode_length=episode_length,
+                    episode_num=episode_num,
+                    shape_meta=self.shape_meta,
                 ),
-                n_obs_steps=n_obs_steps,
-                n_action_steps=n_action_steps,
-                max_episode_steps=max_steps
-            )
-        
-        self.env_fn = env_fn
+            n_obs_steps=self.n_obs_steps,
+            n_action_steps=self.n_action_steps,
+            max_episode_steps=self.max_steps,
+        )
 
     def run(self, policy: BaseImagePolicy, vis_pred_video=False, **kwargs):
         device = policy.device
@@ -189,9 +178,9 @@ class RLBenchRunner(BaseImageRunner):
                 env_action = self.undo_transform_action(action)
             obs, reward, done, info = env.step(env_action[0])
             
-            rgb_uint8 = (np.transpose(obs['agentview_rgb'][0], (1, 2, 0)) * 255).astype(np.uint8)
-            frames.append(Image.fromarray(rgb_uint8))
-            
+            rgb_uint8 = (np.transpose(obs["agentview_rgb"], (0, 2, 3, 1)) * 255).astype(np.uint8)
+            frames.extend([Image.fromarray(frame) for frame in rgb_uint8[-self.n_action_steps:]])
+
             if kwargs["task_mode"] == "full_dynamic_model":
                 pred_video = np_action_dict["video"].squeeze(0)  # (T, H, W, C)
                 rollout_video = obs["agentview_rgb"][-self.n_action_steps:]  # (T, C, H, W)
