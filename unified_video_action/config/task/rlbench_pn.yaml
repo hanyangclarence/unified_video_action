@@ -35,7 +35,7 @@ dataset:
   _target_: unified_video_action.dataset.rlbench_dataset_pn.RLBenchDataset
   shape_meta: *shape_meta
   abs_action: true
-  dataset_path: /gpfs/u/home/LMCG/LMCGhazh/scratch/enroot/rlbench_data/root/RACER-DataGen/racer_datagen/runs_uva/val
+  dataset_path: ["/proj/inf-scaling/yanghan/data/rlbench", "/proj/inf-scaling/yanghan/data/rlbench_2"]
   language_emb_model: clip
   horizon: 32
   n_obs_steps: 16
@@ -48,6 +48,7 @@ dataset:
   data_aug: true
   normalizer_type: all
   language_uncond_ratio: 0.1
+  negative_sample_ratio: 0.33
 
 env_runner:
   _target_: unified_video_action.env_runner.rlbench_runner.RLBenchRunner

@@ -56,6 +56,7 @@ class RLBenchDataset(BaseImageDataset):
         data_aug=False,
         normalizer_type=None,
         language_uncond_ratio=0.1,
+        negative_sample_ratio=1.0
     ):
 
         rotation_transformer = RotationTransformer(
@@ -123,35 +124,70 @@ class RLBenchDataset(BaseImageDataset):
 
         self.data_aug = data_aug
 
-        val_mask = get_val_mask(
+        self.val_mask = get_val_mask(
             n_episodes=replay_buffer.n_episodes, val_ratio=val_ratio, seed=seed
-        )
-        train_mask = ~val_mask
-
-        sampler = SequenceSampler(
-            replay_buffer=replay_buffer,
-            sequence_length=horizon,
-            pad_before=pad_before,
-            pad_after=pad_after,
-            episode_mask=train_mask,
         )
 
         self.replay_buffer = replay_buffer
-        self.sampler = sampler
+        self.sampler = None
         self.shape_meta = shape_meta
         self.rgb_keys = rgb_keys
         self.lowdim_keys = lowdim_keys
         self.abs_action = abs_action
         self.n_obs_steps = n_obs_steps
-        self.train_mask = train_mask
+        self.train_mask = None
         self.horizon = horizon
         self.pad_before = pad_before
         self.pad_after = pad_after
         self.use_legacy_normalizer = use_legacy_normalizer
         self.language_uncond_ratio = language_uncond_ratio
         self.is_train = True
+        self.negative_sample_ratio = negative_sample_ratio
+        self.seed = seed
+        self.epoch_seed = seed
 
         self.language_emb_model = language_emb_model
+        
+        self.resample_train_mask()
+
+    def resample_train_mask(self):
+        self.epoch_seed += 1
+        train_mask = ~self.val_mask
+        
+        if self.negative_sample_ratio < 1.0:
+            # randomly drop some negative samples
+            num_pos = self.replay_buffer.meta['num_positive_demos'][()]
+            num_episodes = self.replay_buffer.n_episodes
+            
+            pos_indices = np.arange(num_pos)
+            neg_indices = np.arange(num_pos, num_episodes)
+            
+            # Keep all positive episodes in the train_mask
+            pos_mask = train_mask[pos_indices]
+            
+            # Subsample negative episodes
+            neg_mask = train_mask[neg_indices]
+            neg_train_indices = neg_indices[neg_mask]
+
+            rng = np.random.default_rng(self.epoch_seed)
+            n_neg_to_keep = int(len(neg_train_indices) * self.negative_sample_ratio)
+            
+            final_neg_indices = rng.choice(neg_train_indices, size=n_neg_to_keep, replace=False)
+            
+            # Create a new mask for all episodes
+            new_train_mask = np.zeros_like(train_mask)
+            new_train_mask[pos_indices] = pos_mask
+            new_train_mask[final_neg_indices] = True
+            train_mask = new_train_mask
+        
+        self.train_mask = train_mask
+        self.sampler = SequenceSampler(
+            replay_buffer=self.replay_buffer,
+            sequence_length=self.horizon,
+            pad_before=self.pad_before,
+            pad_after=self.pad_after,
+            episode_mask=self.train_mask,
+        )
 
     def get_validation_dataset(self):
         val_set = copy.copy(self)
@@ -160,9 +196,9 @@ class RLBenchDataset(BaseImageDataset):
             sequence_length=self.horizon,
             pad_before=self.pad_before,
             pad_after=self.pad_after,
-            episode_mask=~self.train_mask,
+            episode_mask=self.val_mask,
         )
-        val_set.train_mask = ~self.train_mask
+        val_set.train_mask = self.val_mask
         return val_set
 
     def get_normalizer(self, **kwargs) -> LinearNormalizer:
@@ -478,6 +514,10 @@ def _convert_robomimic_to_replay(
     episode_starts = [0] + episode_ends[:-1]
     _ = meta_group.array(
         "episode_ends", episode_ends, dtype=np.int64, compressor=None, overwrite=True
+    )
+    _ = meta_group.array(
+        "num_positive_demos", np.array(num_positive_demos, dtype=np.int64),
+        dtype=np.int64, compressor=None, overwrite=True
     )
 
     # save lowdim data

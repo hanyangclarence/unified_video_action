@@ -246,6 +246,12 @@ class TrainUnifiedVideoActionWorkspace(BaseWorkspace):
 
             # ========= train for this epoch ==========
             train_losses = list()
+            
+            if hasattr(dataset, "resample_train_mask"):
+                dataset.resample_train_mask()
+            
+            pos_neg_count = {"pos": 0, "neg": 0}
+            
             with tqdm.tqdm(
                 train_dataloader,
                 desc=f"Training epoch {self.epoch}",
