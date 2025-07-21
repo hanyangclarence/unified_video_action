@@ -23,7 +23,7 @@ import click
 @click.option("--task_mode", default="policy_model", help="Task mode")
 @click.option("--episodes_per_task", default=5, type=int, help="Number of episodes per task")
 @click.option("--server_ip", required=True, help="IP address of the server")
-@click.option("--tasks", default=None, help="Comma-separated list of tasks to run (if not specified, runs all default tasks)")
+@click.option("--tasks", type=str, default=None, help="Comma-separated list of tasks to run (if not specified, runs all default tasks)")
 @click.option("--cfg_pos", type=int, default=None, help="Configuration for positive sampling")
 @click.option("--cfg_neg", type=int, default=None, help="Configuration for negative sampling")
 @click.option("--pos_neg_sample", default=False, help="Whether to use positive/negative sampling")
@@ -53,10 +53,12 @@ def main(
                 "--device", device,
                 "--task_mode", task_mode,
                 "--server_ip", server_ip,
-                "--cfg_pos", str(cfg_pos),
-                "--cfg_neg", str(cfg_neg),
                 "--pos_neg_sample", str(pos_neg_sample),
             ]
+            if cfg_pos is not None:
+                cmd.extend(["--cfg_pos", str(cfg_pos)])
+            if cfg_neg is not None:
+                cmd.extend(["--cfg_neg", str(cfg_neg)])
 
             result = subprocess.run(cmd)
 
