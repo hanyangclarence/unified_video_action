@@ -33,8 +33,9 @@ def setup_env_and_xvfb():
 @click.option("--task_mode", default="policy_model")
 @click.option("--cfg_pos", type=int, default=None)
 @click.option("--cfg_neg", type=int, default=None)
-@click.option("--server_ip", default=None, help="IP address of the server") 
-def main(checkpoint, output_dir, device, task, episode, task_mode, cfg_pos, cfg_neg, server_ip):
+@click.option("--server_ip", default=None, help="IP address of the server")
+@click.option("--pos_neg_sample", default=False, help="Whether to use positive/negative sampling")
+def main(checkpoint, output_dir, device, task, episode, task_mode, cfg_pos, cfg_neg, server_ip, pos_neg_sample):
     xvfb_pid = setup_env_and_xvfb()
 
     try:
@@ -74,7 +75,7 @@ def main(checkpoint, output_dir, device, task, episode, task_mode, cfg_pos, cfg_
 
         runner_log = env_runner.run(
             task_mode=task_mode,
-            pos_neg_sample=False,
+            pos_neg_sample=pos_neg_sample,
             cfg_pos=cfg_pos,
             cfg_neg=cfg_neg
         )

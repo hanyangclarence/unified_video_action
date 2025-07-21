@@ -14,33 +14,56 @@ selected_task_list = [
 
 import subprocess
 import os
+import click
 
-CHECKPOINT = "/root/unified_video_action/checkpoints/uva_rlbench_video_act_model/checkpoints/epoch=0065-val_action_l2_distances=0.177.ckpt"
-OUTPUT_DIR = "/root/uva_rollout_DEBUG"
-DEVICE = "cuda:0"
-TASK_MODE = "policy_model"
+@click.command()
+@click.option("-c", "--checkpoint", required=True, help="Path to the model checkpoint")
+@click.option("-o", "--output_dir", required=True, help="Output directory for results")
+@click.option("--device", default="cuda:0", help="Device to use (e.g., cuda:0)")
+@click.option("--task_mode", default="policy_model", help="Task mode")
+@click.option("--episodes_per_task", default=5, type=int, help="Number of episodes per task")
+@click.option("--server_ip", required=True, help="IP address of the server")
+@click.option("--tasks", default=None, help="Comma-separated list of tasks to run (if not specified, runs all default tasks)")
+@click.option("--cfg_pos", type=int, default=None, help="Configuration for positive sampling")
+@click.option("--cfg_neg", type=int, default=None, help="Configuration for negative sampling")
+@click.option("--pos_neg_sample", default=False, help="Whether to use positive/negative sampling")
+def main(
+    checkpoint, output_dir, device, task_mode, 
+    episodes_per_task, server_ip, tasks,
+    cfg_pos, cfg_neg, pos_neg_sample
+):
+    """Run RLBench evaluation across multiple tasks and episodes."""
+    
+    # Use specified tasks or default task list
+    if tasks:
+        task_list = [task.strip() for task in tasks.split(',')]
+    else:
+        task_list = selected_task_list
 
-episodes_per_task = 5 
-server_ip = "172.31.234.23"
+    for task in task_list:
+        for episode in range(episodes_per_task):
+            print(f"\n>>> Running task={task}, episode={episode}...\n")
 
-for task in selected_task_list:
-    for episode in range(episodes_per_task):
-        print(f"\n>>> Running task={task}, episode={episode}...\n")
+            cmd = [
+                "python", "eval_rlbench/client.py",  
+                "--checkpoint", checkpoint,
+                "--output_dir", output_dir,
+                "--task", task,
+                "--episode", str(episode),
+                "--device", device,
+                "--task_mode", task_mode,
+                "--server_ip", server_ip,
+                "--cfg_pos", str(cfg_pos),
+                "--cfg_neg", str(cfg_neg),
+                "--pos_neg_sample", str(pos_neg_sample),
+            ]
 
-        cmd = [
-            "python", "eval_rlbench/client.py",  
-            "--checkpoint", CHECKPOINT,
-            "--output_dir", OUTPUT_DIR,
-            "--task", task,
-            "--episode", str(episode),
-            "--device", DEVICE,
-            "--task_mode", TASK_MODE,
-            "--server_ip", server_ip,
-        ]
+            result = subprocess.run(cmd)
 
-        result = subprocess.run(cmd)
+            if result.returncode != 0:
+                print(f"[ERROR] Task '{task}' Episode '{episode}' failed.\n")
+            else:
+                print(f"[OK] Completed task '{task}' Episode '{episode}'.\n")
 
-        if result.returncode != 0:
-            print(f"[ERROR] Task '{task}' Episode '{episode}' failed.\n")
-        else:
-            print(f"[OK] Completed task '{task}' Episode '{episode}'.\n")
+if __name__ == "__main__":
+    main()

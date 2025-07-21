@@ -117,6 +117,9 @@ class RLBenchRunner(BaseImageRunner):
         return log
     
     def eval_episode(self, task_name, episode_num, **kwargs):
+        if episode_num == 0:
+            print(f"\tModel kwargs: {kwargs}")
+        
         device = 'cuda:0'
         save_dir = f"{self.output_dir}/{task_name}/{episode_num}/"
         os.makedirs(save_dir, exist_ok=True)
@@ -227,6 +230,8 @@ class RLBenchRunner(BaseImageRunner):
         print(f"Episode {episode_num} for task {task_name} finished.")
         
         gif_path = os.path.join(save_dir, "agentview_rgb.gif")
+        # resize the images to 128 x 128 to save space
+        frames = [frame.resize((128, 128), Image.ANTIALIAS) for frame in frames]
         frames[0].save(
             gif_path,
             save_all=True,
