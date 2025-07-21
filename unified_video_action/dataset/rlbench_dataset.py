@@ -65,7 +65,7 @@ class RLBenchDataset(BaseImageDataset):
         if use_cache:
 
             if language_emb_model == "clip":
-                cache_zarr_path = dataset_path + "_clip.zarr.zip"
+                cache_zarr_path = dataset_path[0] + "_clip.zarr.zip"
             else:
                 raise NotImplementedError(f"Language model {language_emb_model} not implemented")
 
@@ -319,8 +319,10 @@ def _convert_robomimic_to_replay(
     else:
         raise NotImplementedError(f"Language model {language_emb_model} not implemented")
 
-    
-    dataset_paths = glob.glob(dataset_path + "/expert_demos_*.hdf5")
+    # load positive samples
+    dataset_paths = []
+    for pth in dataset_path:
+        dataset_paths.extend(glob.glob(pth + "/expert_demos_*.hdf5"))
     task_demo_count = {}
     all_demo_ids = []
 
@@ -346,11 +348,16 @@ def _convert_robomimic_to_replay(
             if task_name not in task_demo_count:
                 task_demo_count[task_name] = 0
             task_demo_count[task_name] += 1
+            if task_demo_count[task_name] > 500:
+                print(f"Skipping task {task_name} with more than 500 demos.")
+                continue
             
             demos_all[f"demo_{count}"] = demo
             language_all[f"demo_{count}"] = demo["lang_goal"][()].decode("utf-8")
             count += 1
     print("Total demos:", count)
+    for task_name, num_demos in task_demo_count.items():
+        print(f"Task: {task_name}, Number of demos: {num_demos}")
     for task_name, num_demos in task_demo_count.items():
         print(f"Task: {task_name}, Number of demos: {num_demos}")
         
