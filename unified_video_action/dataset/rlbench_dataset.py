@@ -86,6 +86,7 @@ class RLBenchDataset(BaseImageDataset):
                             abs_action=abs_action,
                             rotation_transformer=rotation_transformer,
                             language_emb_model=language_emb_model,
+                            beginning_repeat_length=n_obs_steps - 1 if n_obs_steps is not None else 0
                         )
                         print("Saving cache to disk.")
                         with zarr.ZipStore(cache_zarr_path) as zip_store:
@@ -108,6 +109,7 @@ class RLBenchDataset(BaseImageDataset):
                 abs_action=abs_action,
                 rotation_transformer=rotation_transformer,
                 language_emb_model=language_emb_model,
+                beginning_repeat_length=n_obs_steps - 1 if n_obs_steps is not None else 0
             )
 
         rgb_keys = list()
@@ -283,6 +285,7 @@ def _convert_robomimic_to_replay(
     n_workers=None,
     max_inflight_tasks=None,
     language_emb_model=None,
+    beginning_repeat_length=0
 ):
     if n_workers is None:
         n_workers = multiprocessing.cpu_count()
@@ -377,7 +380,7 @@ def _convert_robomimic_to_replay(
     prev_end = 0
     for i in range(len(demos)):
         demo = demos[f"demo_{i}"]
-        episode_length = demo["actions"].shape[0]
+        episode_length = demo["actions"].shape[0] + beginning_repeat_length
         episode_end = prev_end + episode_length
         prev_end = episode_end
         episode_ends.append(episode_end)
@@ -398,7 +401,12 @@ def _convert_robomimic_to_replay(
         this_data = list()
         for i in range(len(demos)):
             demo = demos[f"demo_{i}"]
-            this_data.append(demo[data_key][:].astype(np.float32))
+            raw_episode_data = demo[data_key][:].astype(np.float32)
+            if key == 'action':
+                first_frame = raw_episode_data[0:1]
+                repeated_frames = np.repeat(first_frame, beginning_repeat_length, axis=0)
+                raw_episode_data = np.concatenate([repeated_frames, raw_episode_data], axis=0)
+            this_data.append(raw_episode_data)
 
             if key == "action":
                 if language_emb_model == "clip":
@@ -481,7 +489,11 @@ def _convert_robomimic_to_replay(
                 for episode_idx in range(len(demos)):
                     demo = demos[f"demo_{episode_idx}"]
                     hdf5_arr = demo["obs"][key]
-                    for hdf5_idx in range(hdf5_arr.shape[0]):
+                    
+                    # Repeat first frame beginning_repeat_length times
+                    first_frame = hdf5_arr[0:1]
+                    
+                    for i in range(beginning_repeat_length):
                         if len(futures) >= max_inflight_tasks:
                             # limit number of inflight tasks
                             completed, futures = concurrent.futures.wait(
@@ -491,8 +503,27 @@ def _convert_robomimic_to_replay(
                                 if not f.result():
                                     raise RuntimeError("Failed to encode image!")
                             pbar.update(len(completed))
+                        
+                        zarr_idx = episode_starts[episode_idx] + i
+                        futures.add(
+                            executor.submit(
+                                img_copy, img_arr, zarr_idx, first_frame, 0
+                            )
+                        )
 
-                        zarr_idx = episode_starts[episode_idx] + hdf5_idx
+                    for hdf5_idx in range(hdf5_arr.shape[0]):
+                        if len(futures) >= max_inflight_tasks:
+                            # limit number of inflight tasks
+
+                            completed, futures = concurrent.futures.wait(
+                                futures, return_when=concurrent.futures.FIRST_COMPLETED
+                            )
+                            for f in completed:
+                                if not f.result():
+                                    raise RuntimeError("Failed to encode image!")
+                            pbar.update(len(completed))
+
+                        zarr_idx = episode_starts[episode_idx] + beginning_repeat_length + hdf5_idx
                         futures.add(
                             executor.submit(
                                 img_copy, img_arr, zarr_idx, hdf5_arr, hdf5_idx

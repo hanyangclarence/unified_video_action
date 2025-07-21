@@ -31,5 +31,5 @@ LD_LIBRARY_PATH="/usr/lib/nvidia:$MUJOCO_PY_MUJOCO_PATH:$CONDA_PREFIX/lib:$LD_LI
     model.policy.autoregressive_model_params.pretrained_model_path="checkpoints/uva_rlbench_video_model/checkpoints/best.ckpt" \
     model.policy.optimizer.learning_rate=1e-4 \
     logging.project=uva \
-    hydra.run.dir="checkpoints/uva_rlbench_video_act_model" \
+    hydra.run.dir="checkpoints/uva_rlbench_video_act_model_new_with_pad" \
     checkpoint.topk.monitor_key="val_action_l2_distances"
