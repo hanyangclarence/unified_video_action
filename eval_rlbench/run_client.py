@@ -16,6 +16,8 @@ import subprocess
 import os
 import click
 
+os.environ["NO_PROXY"] = "localhost,127.0.0.1"
+
 @click.command()
 @click.option("-c", "--checkpoint", required=True, help="Path to the model checkpoint")
 @click.option("-o", "--output_dir", required=True, help="Output directory for results")
