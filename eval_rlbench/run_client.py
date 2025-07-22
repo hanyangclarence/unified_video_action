@@ -45,6 +45,10 @@ def main(
 
     for task in task_list:
         for episode in range(episode_start, episode_start + episodes_per_task):
+            if os.path.exists(f"{output_dir}/{task}/{episode}/log.json"):
+                print(f"[SKIP] Task '{task}' Episode '{episode}' already exists. Skipping...\n")
+                continue
+            
             print(f"\n>>> Running task={task}, episode={episode}...\n")
 
             cmd = [
