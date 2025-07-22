@@ -35,7 +35,8 @@ def setup_env_and_xvfb():
 @click.option("--cfg_neg", type=int, default=None)
 @click.option("--server_ip", default=None, help="IP address of the server")
 @click.option("--pos_neg_sample", default=False, help="Whether to use positive/negative sampling")
-def main(checkpoint, output_dir, device, task, episode, task_mode, cfg_pos, cfg_neg, server_ip, pos_neg_sample):
+@click.option("--save_full_video", default=False, help="Whether to save full video of the episode")
+def main(checkpoint, output_dir, device, task, episode, task_mode, cfg_pos, cfg_neg, server_ip, pos_neg_sample, save_full_video):
     xvfb_pid = setup_env_and_xvfb()
 
     try:
@@ -77,7 +78,8 @@ def main(checkpoint, output_dir, device, task, episode, task_mode, cfg_pos, cfg_
             task_mode=task_mode,
             pos_neg_sample=pos_neg_sample,
             cfg_pos=cfg_pos,
-            cfg_neg=cfg_neg
+            cfg_neg=cfg_neg,
+            save_full_video=save_full_video
         )
 
         print("Runner log:", runner_log)

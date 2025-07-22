@@ -86,7 +86,7 @@ class RLBenchRunner(BaseImageRunner):
         self.start_episode = start_episode
         self.eval_episodes = eval_episodes
         self.retry_for_InvalidActionError = 5
-        self.episode_length = 25
+        self.episode_length = 50
         self.output_dir = output_dir
         self.shape_meta = shape_meta
         
@@ -180,7 +180,10 @@ class RLBenchRunner(BaseImageRunner):
             obs, reward, done, info = env.step(env_action[0])
             
             rgb_uint8 = (np.transpose(obs["agentview_rgb"], (0, 2, 3, 1)) * 255).astype(np.uint8)
-            frames.extend([Image.fromarray(frame) for frame in rgb_uint8[-self.n_action_steps:]])
+            if kwargs["save_full_video"]:
+                frames.extend([Image.fromarray(frame) for frame in rgb_uint8[-self.n_action_steps:]])
+            else:
+                frames.append(Image.fromarray(rgb_uint8[-1]))
 
             if kwargs["task_mode"] == "full_dynamic_model":
                 pred_video = result["result"]["video"].squeeze(0)  # (T, H, W, C)
