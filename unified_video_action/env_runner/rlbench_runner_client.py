@@ -122,6 +122,7 @@ class RLBenchRunner(BaseImageRunner):
             print(f"\tEval kwargs: {eval_kwargs}")
 
         device = 'cuda:0'
+        port = eval_kwargs.get("port", 8000)
         save_dir = f"{self.output_dir}/{task_name}/{episode_num}/"
         os.makedirs(save_dir, exist_ok=True)
         if os.path.exists(os.path.join(save_dir, "log.json")):
@@ -165,7 +166,7 @@ class RLBenchRunner(BaseImageRunner):
                 language_goal = language_goal.cpu().numpy()
 
             result = requests.post(
-                f"http://{self.server_ip}:8000/act",
+                f"http://{self.server_ip}:{port}/act",
                 json={"obs_dict": obs_dict_np, "language_goal": language_goal, "kwargs": kwargs_np}
             ).json()
             

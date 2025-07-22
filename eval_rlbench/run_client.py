@@ -29,10 +29,11 @@ import click
 @click.option("--cfg_neg", type=int, default=None, help="Configuration for negative sampling")
 @click.option("--pos_neg_sample", default=False, help="Whether to use positive/negative sampling")
 @click.option("--save_full_video", default=False, help="Whether to save full video of the episode")
+@click.option("--port", default=8000, type=int, help="Port for the server connection")
 def main(
     checkpoint, output_dir, device, task_mode, episode_start,
     episodes_per_task, server_ip, tasks,
-    cfg_pos, cfg_neg, pos_neg_sample, save_full_video
+    cfg_pos, cfg_neg, pos_neg_sample, save_full_video, port
 ):
     """Run RLBench evaluation across multiple tasks and episodes."""
     
@@ -56,7 +57,8 @@ def main(
                 "--task_mode", task_mode,
                 "--server_ip", server_ip,
                 "--pos_neg_sample", str(pos_neg_sample),
-                "--save_full_video", str(save_full_video)
+                "--save_full_video", str(save_full_video),
+                "--port", str(port)
             ]
             if cfg_pos is not None:
                 cmd.extend(["--cfg_pos", str(cfg_pos)])
