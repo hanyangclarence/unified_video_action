@@ -21,6 +21,7 @@ import click
 @click.option("-o", "--output_dir", required=True, help="Output directory for results")
 @click.option("--device", default="cuda:0", help="Device to use (e.g., cuda:0)")
 @click.option("--task_mode", default="policy_model", help="Task mode")
+@click.option("--episode_start", default=0, type=int, help="Starting episode number")
 @click.option("--episodes_per_task", default=5, type=int, help="Number of episodes per task")
 @click.option("--server_ip", required=True, help="IP address of the server")
 @click.option("--tasks", type=str, default=None, help="Comma-separated list of tasks to run (if not specified, runs all default tasks)")
@@ -28,7 +29,7 @@ import click
 @click.option("--cfg_neg", type=int, default=None, help="Configuration for negative sampling")
 @click.option("--pos_neg_sample", default=False, help="Whether to use positive/negative sampling")
 def main(
-    checkpoint, output_dir, device, task_mode, 
+    checkpoint, output_dir, device, task_mode, episode_start,
     episodes_per_task, server_ip, tasks,
     cfg_pos, cfg_neg, pos_neg_sample
 ):
@@ -41,7 +42,7 @@ def main(
         task_list = selected_task_list
 
     for task in task_list:
-        for episode in range(episodes_per_task):
+        for episode in range(episode_start, episode_start + episodes_per_task):
             print(f"\n>>> Running task={task}, episode={episode}...\n")
 
             cmd = [
