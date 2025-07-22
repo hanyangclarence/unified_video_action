@@ -107,19 +107,20 @@ class RLBenchRunner(BaseImageRunner):
             max_episode_steps=self.max_steps,
         )
 
-    def run(self, vis_pred_video=False, **kwargs):
+    def run(self, model_kwargs=None, eval_kwargs=None):
         for task_name in self.tasks:
             for episode_num in range(
                 self.start_episode,
                 self.start_episode + self.eval_episodes,
             ):
-                log = self.eval_episode(task_name, episode_num, **kwargs)
+                log = self.eval_episode(task_name, episode_num, model_kwargs=model_kwargs, eval_kwargs=eval_kwargs)
         return log
-    
-    def eval_episode(self, task_name, episode_num, **kwargs):
+
+    def eval_episode(self, task_name, episode_num, model_kwargs=None, eval_kwargs=None):
         if episode_num == 0:
-            print(f"\tModel kwargs: {kwargs}")
-        
+            print(f"\tModel kwargs: {model_kwargs}")
+            print(f"\tEval kwargs: {eval_kwargs}")
+
         device = 'cuda:0'
         save_dir = f"{self.output_dir}/{task_name}/{episode_num}/"
         os.makedirs(save_dir, exist_ok=True)
@@ -157,7 +158,7 @@ class RLBenchRunner(BaseImageRunner):
 
             kwargs_np = {
                 k: v.cpu().numpy() if isinstance(v, torch.Tensor) else v
-                for k, v in kwargs.items()
+                for k, v in model_kwargs.items()
             }
 
             if isinstance(language_goal, torch.Tensor):
@@ -180,12 +181,12 @@ class RLBenchRunner(BaseImageRunner):
             obs, reward, done, info = env.step(env_action[0])
             
             rgb_uint8 = (np.transpose(obs["agentview_rgb"], (0, 2, 3, 1)) * 255).astype(np.uint8)
-            if kwargs["save_full_video"]:
+            if eval_kwargs["save_full_video"]:
                 frames.extend([Image.fromarray(frame) for frame in rgb_uint8[-self.n_action_steps:]])
             else:
                 frames.append(Image.fromarray(rgb_uint8[-1]))
 
-            if kwargs["task_mode"] == "full_dynamic_model":
+            if model_kwargs["task_mode"] == "full_dynamic_model":
                 pred_video = result["result"]["video"].squeeze(0)  # (T, H, W, C)
                 rollout_video = obs["agentview_rgb"][-self.n_action_steps:]  # (T, C, H, W)
                 rollout_video = np.transpose((rollout_video * 255).astype(np.uint8), (0, 2, 3, 1))  # (T, H, W, C)

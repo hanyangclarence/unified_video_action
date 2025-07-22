@@ -73,13 +73,20 @@ def main(checkpoint, output_dir, device, task, episode, task_mode, cfg_pos, cfg_
 
         env_runner = load_env_runner(cfg, output_dir)
         env_runner.tasks = [task]  
+        
+        model_kwargs = {
+            "task_mode": task_mode,
+            "pos_neg_sample": pos_neg_sample,
+            "cfg_pos": cfg_pos,
+            "cfg_neg": cfg_neg,
+        }
+        eval_kwargs = {
+            "save_full_video": save_full_video
+        }
 
         runner_log = env_runner.run(
-            task_mode=task_mode,
-            pos_neg_sample=pos_neg_sample,
-            cfg_pos=cfg_pos,
-            cfg_neg=cfg_neg,
-            save_full_video=save_full_video
+            model_kwargs=model_kwargs,
+            eval_kwargs=eval_kwargs
         )
 
         print("Runner log:", runner_log)
