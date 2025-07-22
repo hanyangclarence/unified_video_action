@@ -231,7 +231,7 @@ class RLBenchRunner(BaseImageRunner):
         
         gif_path = os.path.join(save_dir, "agentview_rgb.gif")
         # resize the images to 128 x 128 to save space
-        frames = [frame.resize((128, 128), Image.ANTIALIAS) for frame in frames]
+        frames = [frame.resize((128, 128)) for frame in frames]
         frames[0].save(
             gif_path,
             save_all=True,
